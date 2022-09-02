@@ -133,7 +133,7 @@ def setnodecol(nodeid, colid):
   savecol(colid)
 
 
-def unsetnodecol(nodeid, colid):
+def remnodecol(nodeid, colid):
 
   if nodeid not in node:
     return
@@ -176,7 +176,7 @@ def setnodeprop(nodeid, propid, propvalue):
   saveprop(propid)
 
 
-def unsetnodeprop(nodeid, propid):
+def remnodeprop(nodeid, propid):
 
   if nodeid not in node:
     return
