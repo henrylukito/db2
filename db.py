@@ -24,11 +24,9 @@ def proppath(propid):
   return dbpath / 'properties' / (propid + '.yml')
 
 
-def clear():
+def load(dirpath):
 
-  global dbpath
-  dbpath = None
-
+  global node
   node.clear()
   col.clear()
   prop.clear()
@@ -36,25 +34,14 @@ def clear():
   nodecol.clear()
   nodeprop.clear()
 
-
-def setup(dirpath):
-
-  (Path(dirpath) / 'collections').mkdir(parents=True, exist_ok=True)
-  (Path(dirpath) / 'properties').mkdir(parents=True, exist_ok=True)
-  (Path(dirpath) / 'relationships').mkdir(parents=True, exist_ok=True)
-  (Path(dirpath) / 'nodes.yml').touch(exist_ok=True)
-
-  load(dirpath)
-
-
-def load(dirpath):
-
-  clear()
-
   global dbpath
   dbpath = Path(dirpath)
 
-  global node
+  (dbpath / 'collections').mkdir(parents=True, exist_ok=True)
+  (dbpath / 'properties').mkdir(parents=True, exist_ok=True)
+  (dbpath / 'relationships').mkdir(parents=True, exist_ok=True)
+  nodepath().touch(exist_ok=True)
+
   node = dict.fromkeys(yaml.safe_load(nodepath().read_text(encoding='utf-8')) or {})
 
   for filepath in (x for x in (dbpath / 'collections').iterdir() if x.is_file()):
@@ -63,7 +50,7 @@ def load(dirpath):
   for colid in col:
     for nodeid in col[colid]:
       if nodeid not in node:
-        addnode(nodeid)
+        add(nodeid)
       nodecol.setdefault(nodeid, {}).setdefault(colid)
 
   for filepath in (x for x in (dbpath / 'properties').iterdir() if x.is_file()):
@@ -72,7 +59,7 @@ def load(dirpath):
   for propid in prop:
     for nodeid in prop[propid]:
       if nodeid not in node:
-        addnode(nodeid)
+        add(nodeid)
       nodeprop.setdefault(nodeid, {}).setdefault(propid, prop[propid][nodeid])
 
 
@@ -94,7 +81,7 @@ def saveprop(propid):
     yaml.safe_dump(prop[propid], fp, default_flow_style=False)
 
 
-def addnode(nodeid):
+def add(nodeid):
 
   if nodeid in node:
     return
@@ -120,15 +107,6 @@ def remnode(nodeid):
     nodecol.pop(nodeid, None)
 
 
-def addcol(colid):
-
-  if colid in col:
-    return
-
-  col.setdefault(colid, {})
-  savecol(colid)
-
-
 def remcol(colid):
 
   if colid not in col:
@@ -144,10 +122,10 @@ def remcol(colid):
 def setnodecol(nodeid, colid):
   
   if nodeid not in node:
-    addnode(nodeid)
+    add(nodeid)
 
-  if colid not in col:
-    addcol(colid)
+  if colid in col and nodeid in col[colid]:
+    return
   
   col.setdefault(colid, {}).setdefault(nodeid)
   nodecol.setdefault(nodeid, {}).setdefault(colid)
@@ -169,16 +147,10 @@ def unsetnodecol(nodeid, colid):
   col[colid].pop(nodeid, None)
   nodecol[nodeid].pop(colid, None)
 
-  savecol(colid)
+  if not nodecol[nodeid]:
+    nodecol.pop(nodeid, None)
 
-
-def addprop(propid):
-
-  if propid in prop:
-    return
-
-  prop.setdefault(propid, {})
-  saveprop(propid)
+  savecol(colid) if col[colid] else remcol(colid)
 
 
 def remprop(propid):
@@ -196,10 +168,7 @@ def remprop(propid):
 def setnodeprop(nodeid, propid, propvalue):
   
   if nodeid not in node:
-    addnode(nodeid)
-
-  if propid not in prop:
-    addprop(propid)
+    add(nodeid)
   
   prop.setdefault(propid, {})[nodeid] = propvalue
   nodeprop.setdefault(nodeid, {})[propid] = prop[propid][nodeid]
@@ -221,4 +190,7 @@ def unsetnodeprop(nodeid, propid):
   prop[propid].pop(nodeid, None)
   nodeprop[nodeid].pop(propid, None)
 
-  saveprop(propid)
+  if not nodeprop[nodeid]:
+    nodeprop.pop(nodeid, None)
+
+  saveprop(propid) if prop[propid] else remprop(propid)
