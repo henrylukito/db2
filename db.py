@@ -64,6 +64,8 @@ def create(dirpath):
   (Path(dirpath) / 'relationships').mkdir(parents=True, exist_ok=True)
   (Path(dirpath) / 'nodes.yml').touch(exist_ok=True)
 
+  use(dirpath)
+
 
 def savenode():
 
