@@ -12,14 +12,6 @@ nodecol = {}
 nodeprop = {}
 
 
-class NodeExistError(Exception): pass
-class NodeNotExistError(Exception): pass
-class CollectionExistError(Exception): pass
-class CollectionNotExistError(Exception): pass
-class PropertyExistError(Exception): pass
-class PropertyNotExistError(Exception): pass
-
-
 def nodepath():
   return dbpath / 'nodes.yml'
 
@@ -45,6 +37,16 @@ def clear():
   nodeprop.clear()
 
 
+def setup(dirpath):
+
+  (Path(dirpath) / 'collections').mkdir(parents=True, exist_ok=True)
+  (Path(dirpath) / 'properties').mkdir(parents=True, exist_ok=True)
+  (Path(dirpath) / 'relationships').mkdir(parents=True, exist_ok=True)
+  (Path(dirpath) / 'nodes.yml').touch(exist_ok=True)
+
+  load(dirpath)
+
+
 def load(dirpath):
 
   clear()
@@ -61,7 +63,7 @@ def load(dirpath):
   for colid in col:
     for nodeid in col[colid]:
       if nodeid not in node:
-        raise NodeNotExistError
+        addnode(nodeid)
       nodecol.setdefault(nodeid, {}).setdefault(colid)
 
   for filepath in (x for x in (dbpath / 'properties').iterdir() if x.is_file()):
@@ -70,18 +72,8 @@ def load(dirpath):
   for propid in prop:
     for nodeid in prop[propid]:
       if nodeid not in node:
-        raise NodeNotExistError
+        addnode(nodeid)
       nodeprop.setdefault(nodeid, {}).setdefault(propid, prop[propid][nodeid])
-
-
-def setup(dirpath):
-
-  (Path(dirpath) / 'collections').mkdir(parents=True, exist_ok=True)
-  (Path(dirpath) / 'properties').mkdir(parents=True, exist_ok=True)
-  (Path(dirpath) / 'relationships').mkdir(parents=True, exist_ok=True)
-  (Path(dirpath) / 'nodes.yml').touch(exist_ok=True)
-
-  load(dirpath)
 
 
 def savenode():
@@ -105,16 +97,16 @@ def saveprop(propid):
 def addnode(nodeid):
 
   if nodeid in node:
-    raise NodeExistError
+    return
 
   node.setdefault(nodeid)
   savenode()
 
 
-def removenode(nodeid):
+def remnode(nodeid):
 
   if nodeid not in node:
-    raise NodeNotExistError
+    return
 
   node.pop(nodeid, None)
   savenode()
@@ -131,16 +123,16 @@ def removenode(nodeid):
 def addcol(colid):
 
   if colid in col:
-    raise CollectionExistError
+    return
 
   col.setdefault(colid, {})
   savecol(colid)
 
 
-def removecol(colid):
+def remcol(colid):
 
   if colid not in col:
-    raise CollectionNotExistError
+    return
 
   for nodeid in col[colid]:
     nodecol[nodeid].pop(colid, None)
@@ -152,10 +144,10 @@ def removecol(colid):
 def setnodecol(nodeid, colid):
   
   if nodeid not in node:
-    raise NodeNotExistError
+    addnode(nodeid)
 
   if colid not in col:
-    raise CollectionNotExistError
+    addcol(colid)
   
   col.setdefault(colid, {}).setdefault(nodeid)
   nodecol.setdefault(nodeid, {}).setdefault(colid)
@@ -166,10 +158,13 @@ def setnodecol(nodeid, colid):
 def unsetnodecol(nodeid, colid):
 
   if nodeid not in node:
-    raise NodeNotExistError
+    return
 
   if colid not in col:
-    raise CollectionNotExistError
+    return
+
+  if nodeid not in col[colid]:
+    return
 
   col[colid].pop(nodeid, None)
   nodecol[nodeid].pop(colid, None)
@@ -180,16 +175,16 @@ def unsetnodecol(nodeid, colid):
 def addprop(propid):
 
   if propid in prop:
-    raise PropertyExistError
+    return
 
   prop.setdefault(propid, {})
   saveprop(propid)
 
 
-def removeprop(propid):
+def remprop(propid):
 
   if propid not in prop:
-    raise PropertyNotExistError
+    return
 
   for nodeid in prop[propid]:
     nodeprop[nodeid].pop(propid, None)
@@ -201,10 +196,10 @@ def removeprop(propid):
 def setnodeprop(nodeid, propid, propvalue):
   
   if nodeid not in node:
-    raise NodeNotExistError
+    addnode(nodeid)
 
   if propid not in prop:
-    raise PropertyNotExistError
+    addprop(propid)
   
   prop.setdefault(propid, {})[nodeid] = propvalue
   nodeprop.setdefault(nodeid, {})[propid] = prop[propid][nodeid]
@@ -215,10 +210,13 @@ def setnodeprop(nodeid, propid, propvalue):
 def unsetnodeprop(nodeid, propid):
 
   if nodeid not in node:
-    raise NodeNotExistError
+    return
 
   if propid not in prop:
-    raise PropertyNotExistError
+    return
+
+  if nodeid not in prop[propid]:
+    return
 
   prop[propid].pop(nodeid, None)
   nodeprop[nodeid].pop(propid, None)
