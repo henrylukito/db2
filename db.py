@@ -4,10 +4,10 @@ import yaml
 
 dbpath = None
 
-nodes = {}
-collections = {}
+node = {}
+col = {}
 
-nodecollections = {}
+nodecol = {}
 
 
 class NodeExistError(Exception): pass
@@ -16,12 +16,12 @@ class CollectionExistError(Exception): pass
 class CollectionNotExistError(Exception): pass
 
 
-def nodespath():
+def nodepath():
   return dbpath / 'nodes.yml'
 
 
-def collectionpath(collectionid):
-  return dbpath / 'collections' / (collectionid + '.yml')
+def colpath(colid):
+  return dbpath / 'collections' / (colid + '.yml')
 
 
 def clear():
@@ -30,10 +30,10 @@ def clear():
 
   dbpath = None
 
-  nodes.clear()
-  collections.clear()
+  node.clear()
+  col.clear()
 
-  nodecollections.clear()
+  nodecol.clear()
 
 
 def use(dirpath):
@@ -41,20 +41,20 @@ def use(dirpath):
   clear()
 
   global dbpath
-  global nodes
+  global node
 
   dbpath = Path(dirpath)
 
-  nodes = dict.fromkeys(yaml.safe_load(nodespath().read_text(encoding='utf-8')) or {})
+  node = dict.fromkeys(yaml.safe_load(nodepath().read_text(encoding='utf-8')) or {})
 
-  for collectionpath in (x for x in (dbpath / 'collections').iterdir() if x.is_file()):
-    collections[collectionpath.stem] = dict.fromkeys(yaml.safe_load(collectionpath.read_text(encoding='utf-8')) or {})
+  for filepath in (x for x in (dbpath / 'collections').iterdir() if x.is_file()):
+    col[filepath.stem] = dict.fromkeys(yaml.safe_load(filepath.read_text(encoding='utf-8')) or {})
 
-  for collectionid in collections:
-    for nodeid in collections[collectionid]:
-      if nodeid not in nodes:
+  for colid in col:
+    for nodeid in col[colid]:
+      if nodeid not in node:
         raise NodeNotExistError
-      nodecollections.setdefault(nodeid, {}).setdefault(collectionid)
+      nodecol.setdefault(nodeid, {}).setdefault(colid)
 
 
 def create(dirpath):
@@ -65,88 +65,88 @@ def create(dirpath):
   (Path(dirpath) / 'nodes.yml').touch(exist_ok=True)
 
 
-def savenodes():
+def savenode():
 
-  with nodespath().open('w', encoding='utf-8') as fp:
-    yaml.safe_dump(list(nodes), fp, default_flow_style=False)
+  with nodepath().open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(list(node), fp, default_flow_style=False)
 
 
-def savecollection(collectionid):
+def savecol(colid):
 
-  with collectionpath(collectionid).open('w', encoding='utf-8') as fp:
-    yaml.safe_dump(list(collections[collectionid]), fp, default_flow_style=False)
+  with colpath(colid).open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(list(col[colid]), fp, default_flow_style=False)
 
 
 def addnode(nodeid):
 
-  if nodeid in nodes:
+  if nodeid in node:
     raise NodeExistError
 
-  nodes.setdefault(nodeid)
-  savenodes()
+  node.setdefault(nodeid)
+  savenode()
 
 
 def removenode(nodeid):
 
-  if nodeid not in nodes:
+  if nodeid not in node:
     raise NodeNotExistError
 
-  nodes.pop(nodeid, None)
-  savenodes()
+  node.pop(nodeid, None)
+  savenode()
 
-  if nodeid in nodecollections:
+  if nodeid in nodecol:
 
-    for collectionid in nodecollections[nodeid]:
-      collections[collectionid].pop(nodeid, None)
-      savecollection(collectionid)
+    for colid in nodecol[nodeid]:
+      col[colid].pop(nodeid, None)
+      savecol(colid)
 
-    nodecollections.pop(nodeid, None)
+    nodecol.pop(nodeid, None)
 
 
-def addcollection(collectionid):
+def addcol(colid):
 
-  if collectionid in collections:
+  if colid in col:
     raise CollectionExistError
 
-  collections.setdefault(collectionid, {})
-  savecollection(collectionid)
+  col.setdefault(colid, {})
+  savecol(colid)
 
 
-def removecollection(collectionid):
+def removecol(colid):
 
-  if collectionid not in collections:
+  if colid not in col:
     raise CollectionNotExistError
 
-  for nodeid in collections[collectionid]:
-    nodecollections[nodeid].pop(collectionid, None)
+  for nodeid in col[colid]:
+    nodecol[nodeid].pop(colid, None)
 
-  collections.pop(collectionid, None)
-  collectionpath(collectionid).unlink()
+  col.pop(colid, None)
+  colpath(colid).unlink()
 
 
-def setnodecollection(nodeid, collectionid):
+def setnodecol(nodeid, colid):
   
-  if nodeid not in nodes:
+  if nodeid not in node:
     raise NodeNotExistError
 
-  if collectionid not in collections:
+  if colid not in col:
     raise CollectionNotExistError
   
-  collections.setdefault(collectionid, {}).setdefault(nodeid)
-  nodecollections.setdefault(nodeid, {}).setdefault(collectionid)
+  col.setdefault(colid, {}).setdefault(nodeid)
+  nodecol.setdefault(nodeid, {}).setdefault(colid)
 
-  savecollection(collectionid)
+  savecol(colid)
 
 
-def unsetnodecollection(nodeid, collectionid):
+def unsetnodecol(nodeid, colid):
 
-  if nodeid not in nodes:
+  if nodeid not in node:
     raise NodeNotExistError
 
-  if collectionid not in collections:
+  if colid not in col:
     raise CollectionNotExistError
 
-  collections[collectionid].pop(nodeid, None)
-  nodecollections[nodeid].pop(collectionid, None)
+  col[colid].pop(nodeid, None)
+  nodecol[nodeid].pop(colid, None)
 
-  savecollection(collectionid)
+  savecol(colid)
