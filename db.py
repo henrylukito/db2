@@ -45,7 +45,7 @@ def clear():
   nodeprop.clear()
 
 
-def use(dirpath):
+def load(dirpath):
 
   clear()
 
@@ -74,14 +74,14 @@ def use(dirpath):
       nodeprop.setdefault(nodeid, {}).setdefault(propid, prop[propid][nodeid])
 
 
-def create(dirpath):
+def setup(dirpath):
 
   (Path(dirpath) / 'collections').mkdir(parents=True, exist_ok=True)
   (Path(dirpath) / 'properties').mkdir(parents=True, exist_ok=True)
   (Path(dirpath) / 'relationships').mkdir(parents=True, exist_ok=True)
   (Path(dirpath) / 'nodes.yml').touch(exist_ok=True)
 
-  use(dirpath)
+  load(dirpath)
 
 
 def savenode():
