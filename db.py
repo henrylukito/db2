@@ -169,6 +169,9 @@ def setnodeprop(nodeid, propid, propvalue):
   
   if nodeid not in node:
     add(nodeid)
+
+  if propid in prop and nodeid in prop[propid] and prop[propid][nodeid] == propvalue:
+    return
   
   prop.setdefault(propid, {})[nodeid] = propvalue
   nodeprop.setdefault(nodeid, {})[propid] = prop[propid][nodeid]
