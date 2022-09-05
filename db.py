@@ -42,15 +42,14 @@ def load(dirpath):
   (dbpath / 'relationships').mkdir(parents=True, exist_ok=True)
   nodepath().touch(exist_ok=True)
 
-  node = dict.fromkeys(yaml.safe_load(nodepath().read_text(encoding='utf-8')) or {})
+  node = dict.fromkeys(yaml.safe_load(nodepath().read_text(encoding='utf-8')) or [])
 
   for filepath in (x for x in (dbpath / 'collections').iterdir() if x.is_file()):
-    col[filepath.stem] = dict.fromkeys(yaml.safe_load(filepath.read_text(encoding='utf-8')) or {})
+    col[filepath.stem] = dict.fromkeys(yaml.safe_load(filepath.read_text(encoding='utf-8')) or [])
 
   for colid in col:
     for nodeid in col[colid]:
-      if nodeid not in node:
-        add(nodeid)
+      if nodeid not in node: setnode(nodeid)
       nodecol.setdefault(nodeid, {}).setdefault(colid)
 
   for filepath in (x for x in (dbpath / 'properties').iterdir() if x.is_file()):
@@ -58,8 +57,7 @@ def load(dirpath):
 
   for propid in prop:
     for nodeid in prop[propid]:
-      if nodeid not in node:
-        add(nodeid)
+      if nodeid not in node: setnode(nodeid)
       nodeprop.setdefault(nodeid, {}).setdefault(propid, prop[propid][nodeid])
 
 
@@ -81,7 +79,7 @@ def saveprop(propid):
     yaml.safe_dump(prop[propid], fp, default_flow_style=False)
 
 
-def add(nodeid):
+def setnode(nodeid):
 
   if nodeid in node:
     return
@@ -122,7 +120,7 @@ def remcol(colid):
 def setnodecol(nodeid, colid):
   
   if nodeid not in node:
-    add(nodeid)
+    setnode(nodeid)
 
   if colid in col and nodeid in col[colid]:
     return
@@ -168,7 +166,7 @@ def remprop(propid):
 def setnodeprop(nodeid, propid, propvalue):
   
   if nodeid not in node:
-    add(nodeid)
+    setnode(nodeid)
 
   if propid in prop and nodeid in prop[propid] and prop[propid][nodeid] == propvalue:
     return
