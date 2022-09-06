@@ -241,7 +241,7 @@ def setnoderel(sourceid, relid, targetid, propid=None, propvalue=None):
   saverel(relid)
 
 
-def parse(res):
+def parseset(res):
 
   def parseprop(propstr):
 
@@ -303,8 +303,8 @@ def parse(res):
           setnoderel(lnode, relid, rnode)
 
 
-def start():
+def qset():
   res = input()
-  while res != 'end':
-    parse(res)
+  while res != 'q':
+    parseset(res)
     res = input()
