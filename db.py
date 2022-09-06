@@ -289,9 +289,22 @@ def parse(res):
     rnodestrs = [x.strip() for x in relsplit[2].split(';')]
     rnodes = [parsenode(rnodestr) for rnodestr in rnodestrs]
 
+    relpropsplit = [x.strip() for x in relsplit[1].split('.', 1)]
+    relid = relpropsplit[0]
+    if len(relpropsplit) > 1:
+      relpropdict = parseprop(relpropsplit[1])
+
+    for lnode in lnodes:
+      for rnode in rnodes:
+        if len(relpropsplit) > 1:
+          for relpropid, relpropvalue in relpropdict.items():
+            setnoderel(lnode, relid, rnode, relpropid, relpropvalue)
+        else:
+          setnoderel(lnode, relid, rnode)
+
 
 def start():
   res = input()
-  while res != 'end()':
+  while res != 'end':
     parse(res)
     res = input()
