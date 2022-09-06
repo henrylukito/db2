@@ -318,6 +318,22 @@ def remnodereltarget(sourceid, relid, targetid):
   saverel(relid) if relid in rel else relpath(relid).unlink()
 
 
+def remnoderel(sourceid, relid):
+
+  targetids = list(rel[relid][sourceid])
+
+  for targetid in targetids:
+    remnodereltarget(sourceid, relid, targetid)
+
+
+def remrel(relid):
+
+  sourceids = list(rel[relid])
+
+  for sourceid in sourceids:
+    remnoderel(sourceid, relid)
+
+
 def parseset(res):
 
   def parseprop(propstr):
