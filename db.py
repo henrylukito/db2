@@ -8,10 +8,11 @@ dbpath = None
 node = {}
 col = {}
 prop = {}
+rel = {}
 
 nodecol = {}
 nodeprop = {}
-
+noderel = {}
 
 def nodepath():
   return dbpath / 'nodes.yml'
@@ -25,15 +26,20 @@ def proppath(propid):
   return dbpath / 'properties' / (propid + '.yml')
 
 
+def relpath(relid):
+  return dbpath / 'relationships' / (relid + '.yml')
+
+
 def load(dirpath):
 
-  global node
   node.clear()
   col.clear()
   prop.clear()
+  rel.clear()
 
   nodecol.clear()
   nodeprop.clear()
+  noderel.clear()
 
   global dbpath
   dbpath = Path(dirpath)
@@ -43,7 +49,7 @@ def load(dirpath):
   (dbpath / 'relationships').mkdir(parents=True, exist_ok=True)
   nodepath().touch(exist_ok=True)
 
-  node = dict.fromkeys(yaml.safe_load(nodepath().read_text(encoding='utf-8')) or [])
+  node.update(dict.fromkeys(yaml.safe_load(nodepath().read_text(encoding='utf-8')) or []))
 
   for filepath in (x for x in (dbpath / 'collections').iterdir() if x.is_file()):
     col[filepath.stem] = dict.fromkeys(yaml.safe_load(filepath.read_text(encoding='utf-8')) or [])
@@ -60,6 +66,16 @@ def load(dirpath):
     for nodeid in prop[propid]:
       if nodeid not in node: setnode(nodeid)
       nodeprop.setdefault(nodeid, {}).setdefault(propid, prop[propid][nodeid])
+
+  for filepath in (x for x in (dbpath / 'relationships').iterdir() if x.is_file()):
+    rel[filepath.stem] = yaml.safe_load(filepath.read_text(encoding='utf-8')) or {}
+
+  for relid in rel:
+    for sourceid in rel[relid]:
+      if sourceid not in node: setnode(sourceid)
+      for targetid in rel[relid][sourceid]:
+        if targetid not in node: setnode(targetid)
+        noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, rel[relid][sourceid][targetid])
 
 
 def savenode():
@@ -78,6 +94,12 @@ def saveprop(propid):
 
   with proppath(propid).open('w', encoding='utf-8') as fp:
     yaml.safe_dump(prop[propid], fp, default_flow_style=False)
+
+
+def saverel(relid):
+
+  with relpath(relid).open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(rel[relid], fp, default_flow_style=False) 
 
 
 def setnode(nodeid):
@@ -196,6 +218,27 @@ def remnodeprop(nodeid, propid):
     nodeprop.pop(nodeid, None)
 
   saveprop(propid) if prop[propid] else remprop(propid)
+
+
+def setnoderel(sourceid, relid, targetid, propid=None, propvalue=None):
+
+  if sourceid not in node:
+    setnode(sourceid)
+
+  if targetid not in node:
+    setnode(targetid)
+
+  if relid in rel and sourceid in rel[relid] and targetid in rel[relid][sourceid] and propid is not None and propid in rel[relid][sourceid][targetid] and rel[relid][sourceid][targetid][propid] == propvalue:
+    return
+
+  rel.setdefault(relid, {}).setdefault(sourceid, {}).setdefault(targetid, {})
+
+  if propid is not None:
+    rel[relid][sourceid][targetid][propid] = propvalue
+
+  noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, rel[relid][sourceid][targetid])
+
+  saverel(relid)
 
 
 def parse(res):
