@@ -5,14 +5,16 @@ import yaml
 
 dbpath = None
 
-node = {}
-col = {}
-prop = {}
-rel = {}
+node = {} # node[nodeid]
+col = {} # col[colid][nodeid]
+prop = {} # prop[propid][nodeid]
+rel = {} # rel[relid][sourceid][targetid][relpropid]
+backrel = {} # backrel[relid][targetid][sourceid][relpropid]
 
-nodecol = {}
-nodeprop = {}
-noderel = {}
+nodecol = {} # nodecol[nodeid][colid]
+nodeprop = {} # nodeprop[nodeid][propid]
+noderel = {} # noderel[sourceid][relid][targetid][relpropid]
+nodebackrel = {} # nodebackrel[targetid][relid][sourceid][relpropid]
 
 def nodepath():
   return dbpath / 'nodes.yml'
@@ -76,6 +78,8 @@ def load(dirpath):
       for targetid in rel[relid][sourceid]:
         if targetid not in node: setnode(targetid)
         noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, rel[relid][sourceid][targetid])
+        backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
+        nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
 
 
 def savenode():
@@ -238,7 +242,80 @@ def setnoderel(sourceid, relid, targetid, propid=None, propvalue=None):
 
   noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, rel[relid][sourceid][targetid])
 
+  backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
+
+  nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
+
   saverel(relid)
+
+
+def remnoderelprop(sourceid, relid, targetid, propid):
+
+  if sourceid not in node:
+    return
+
+  if relid not in rel:
+    return
+
+  if targetid not in node:
+    return
+
+  if sourceid not in rel[relid]:
+    return
+
+  if targetid not in rel[relid][sourceid]:
+    return
+
+  if propid not in rel[relid][sourceid][targetid]:
+    return
+
+  del rel[relid][sourceid][targetid][propid]
+
+  saverel(relid)
+
+
+def remnodereltarget(sourceid, relid, targetid):
+
+  if sourceid not in node:
+    return
+
+  if relid not in rel:
+    return
+
+  if targetid not in node:
+    return
+
+  if sourceid not in rel[relid]:
+    return
+
+  if targetid not in rel[relid][sourceid]:
+    return
+
+  del rel[relid][sourceid][targetid]
+  if not rel[relid][sourceid]:
+    del rel[relid][sourceid]
+  if not rel[relid]:
+    del rel[relid]
+
+  del noderel[sourceid][relid][targetid]
+  if not noderel[sourceid][relid]:
+    del noderel[sourceid][relid]
+  if not noderel[sourceid]:
+    del noderel[sourceid]
+
+  del backrel[relid][targetid][sourceid]
+  if not backrel[relid][targetid]:
+    del backrel[relid][targetid]
+  if not backrel[relid]:
+    del backrel[relid]
+
+  del nodebackrel[targetid][relid][sourceid]
+  if not nodebackrel[targetid][relid]:
+    del nodebackrel[targetid][relid]
+  if not nodebackrel[targetid]:
+    del nodebackrel[targetid]
+
+  saverel(relid) if relid in rel else relpath(relid).unlink()
 
 
 def parseset(res):
