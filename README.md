@@ -1,10 +1,10 @@
 # db2
 
-Python script to help you manage a folder of YAML files that can be loaded as Python objects that can be used like graph database.
+Python script to help manage a folder of YAML files as a (graph) database. The data from YAML files can be loaded as Python objects, and editing these objects also updates the files.
 
-## How to create folder with starting files
+## How to create the folder with starting files
 
-Call `load(dbname)`. A folder named `dbname` will be created on current working directory, and it will also be 'loaded' (below).
+Call `load(dbname)`. A folder named `dbname` will be created on current working directory if not already created, together with some starting directories and files, and the database will also be 'loaded' (below).
 
 
 ## Load objects from files
