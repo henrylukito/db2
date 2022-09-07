@@ -1,45 +1,47 @@
 # db2
 
-Script to help you to manage a folder of YAML files that can be loaded as objects that represent graph database.
+Python script to help you manage a folder of YAML files that can be loaded as Python objects that can be used like graph database.
 
 ## How to create folder with starting files
 
-Call `load(dbname)`. A folder named `dbname` will be created on current working directory.
+Call `load(dbname)`. A folder named `dbname` will be created on current working directory, and it will also be 'loaded' (below).
 
 
-## Load objects
+## Load objects from files
 
-Also call `load(dbname)`. This module's dict objects such as `node`, `col`, `prop`, `rel`, `nodecol`, `nodeprop`, `noderel` etc will be populated.
+Also call `load(dbname)`. This module's dict objects such as `node`, `col`, `prop`, `rel` etc will be populated according to data in files.
 
 
 ## What is col?
 
-It stands for collection. A collection is just a way to have a subset list of nodes. A node can be in multiple collections.
+It stands for collection. A collection is just a way to have a subset list of nodes. A node can exist in multiple collections.
 
 
-## What is the difference between `col` and `nodecol`?
+## What is the difference between `col` and `nodecol` dict?
 
 The keys for `col` dict are col ids, while the keys for `nodecol` are node ids.
 
-You use `col` dict to find out what nodes are in a collection and `nodecol` dict to find out all collections a node is in.
+You use `col` dict to find out all nodes in a collection and `nodecol` dict to find out all collections a node is in.
 
-The same applies to other pairs like `prop` and `nodeprop`, `rel` and `noderel` etc.
-
-
-## How to add/remove nodes/properties/relationships?
-
-Call functions like `setnode`, `setnodecol`, `setnodeprop`, `setnoderel` etc.
-
-The counterparts for removal are `remnode`, `remnodecol`, `remnodeprop`, `remnoderel` etc.
-
-These functions will update the files if there are changes. They also ensure the dict objects remain consistent, e.g., between `col` and `nodecol`.
-
-These functions will add nodes, properties etc if they don't already exist, instead of being strict by throwing errors.
+The same applies to other dicts like `prop` and `nodeprop`, `rel` and `noderel` etc.
 
 
-## How to add nodes/properties/relationships quickly?
+## How to edit nodes/collections/properties/relationships?
 
-There is a function `qset` (quick set) that will keep asking user for input until `q` is typed.
+To add, call functions like `setnode`, `setnodecol`, `setnodeprop`, `setnoderel` etc.
+
+To remove, the counterparts are `remnode`, `remnodecol`, `remnodeprop`, `remnoderel` etc.
+
+These functions will update the files immediately. They also ensure the dict objects remain consistent, e.g., between `col` and `nodecol`.
+
+These functions will automatically add nodes, properties and others if they don't already exist, instead of being strict by throwing errors.
+
+These functions will automatically remove collections, properties, relationships when they become empty and will also delete their files.
+
+
+## Quicker way to add nodes/properties/relationships
+
+There is a function `quickset` that will keep looping for user input until it's exited with e.g., keyboard interrupt (ctrl+c).
 
 The input has certain syntax:
 
@@ -124,11 +126,11 @@ Note if slime drops potion and jelly at different probabilites, it has to be spe
 The syntax for adding property to relationship is admittedly more annoying than others.
 
 
-## What to do after loading objects?
+## How to use these objects once they're loaded?
 
-Currently the script doesn't take care much about querying.
+Aside from editing nodes/properties/relationships etc, and ensure the files and the dicts are consistent, currently the script doesn't help much when it comes to querying the objects.
 
-You can use Python list constructor, in statement, list comprehension and dict comprehension etc on the dict objects to query like a database.
+You can use Python features like list constructor, in operator, list comprehension and dict comprehension etc on the dict objects to query like a database.
 
 `list(node) # list all nodes`
 
