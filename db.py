@@ -330,11 +330,9 @@ def remrel(relid):
     remnoderel(sourceid, relid)
 
 
-def quickset():
+def quickset(arg=None):
 
-  while True:
-
-    res = input()
+  def parseset(arg):
 
     def parseprop(propstr):
 
@@ -370,7 +368,7 @@ def quickset():
 
       return nodeid
 
-    relsplit = [x.strip() for x in res.split('>')]
+    relsplit = [x.strip() for x in arg.split('>')]
 
     if len(relsplit) != 1 and len(relsplit) != 3:
       raise ParseError
@@ -394,3 +392,20 @@ def quickset():
               setnoderel(lnode, relid, rnode, relpropid, relpropvalue)
           else:
             setnoderel(lnode, relid, rnode)
+
+  if arg is None:
+    try:
+      while True:
+        parseset(input())
+    except KeyboardInterrupt:
+      pass
+
+  elif isinstance(arg, str):
+    parseset(arg)
+
+  elif isinstance(arg, list) and all(isinstance(e, str) for e in arg):
+    for e in arg:
+      parseset(e)
+
+  else:
+    raise TypeError
