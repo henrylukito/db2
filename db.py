@@ -5,16 +5,19 @@ import yaml
 
 dbpath = None
 
-node = {} # node[nodeid]
-col = {} # col[colid][nodeid]
-prop = {} # prop[propid][nodeid]
-rel = {} # rel[relid][sourceid][targetid][relpropid]
-backrel = {} # backrel[relid][targetid][sourceid][relpropid]
+node = {} # node[nodeid] = None
+col = {} # col[colid][nodeid] = None
+prop = {} # prop[propid][nodeid] = propvalue
+rel = {} # rel[relid][sourceid][targetid] = relpropdict
+backrel = {} # backrel[relid][targetid][sourceid] = relpropdict
 
-nodecol = {} # nodecol[nodeid][colid]
-nodeprop = {} # nodeprop[nodeid][propid]
-noderel = {} # noderel[sourceid][relid][targetid][relpropid]
-nodebackrel = {} # nodebackrel[targetid][relid][sourceid][relpropid]
+nodecol = {} # nodecol[nodeid][colid] = None
+nodeprop = {} # nodeprop[nodeid][propid] = propvalue
+noderel = {} # noderel[sourceid][relid][targetid] = relpropdict
+nodebackrel = {} # nodebackrel[targetid][relid][sourceid] = relpropdict
+
+# rel, backrel, noderel, noderbackrel references the same relpropdict
+# relpropdict[relpropid] = relpropvalue
 
 
 def nodepath(): return dbpath / 'nodes.yml'
@@ -29,10 +32,12 @@ def load(dirpath):
   col.clear()
   prop.clear()
   rel.clear()
+  backrel.clear()
 
   nodecol.clear()
   nodeprop.clear()
   noderel.clear()
+  nodebackrel.clear()
 
   global dbpath
   dbpath = Path(dirpath)
@@ -49,7 +54,7 @@ def load(dirpath):
 
   for colid in col:
     for nodeid in col[colid]:
-      if nodeid not in node: setnode(nodeid)
+      setnode(nodeid)
       nodecol.setdefault(nodeid, {}).setdefault(colid)
 
   for filepath in (x for x in (dbpath / 'properties').iterdir() if x.is_file()):
@@ -57,7 +62,7 @@ def load(dirpath):
 
   for propid in prop:
     for nodeid in prop[propid]:
-      if nodeid not in node: setnode(nodeid)
+      setnode(nodeid)
       nodeprop.setdefault(nodeid, {}).setdefault(propid, prop[propid][nodeid])
 
   for filepath in (x for x in (dbpath / 'relationships').iterdir() if x.is_file()):
@@ -65,9 +70,9 @@ def load(dirpath):
 
   for relid in rel:
     for sourceid in rel[relid]:
-      if sourceid not in node: setnode(sourceid)
+      setnode(sourceid)
       for targetid in rel[relid][sourceid]:
-        if targetid not in node: setnode(targetid)
+        setnode(targetid)
         noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, rel[relid][sourceid][targetid])
         backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
         nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
@@ -141,8 +146,7 @@ def remcol(colid):
 
 def setnodecol(nodeid, colid):
   
-  if nodeid not in node:
-    setnode(nodeid)
+  setnode(nodeid)
 
   if colid in col and nodeid in col[colid]:
     return
@@ -187,8 +191,7 @@ def remprop(propid):
 
 def setnodeprop(nodeid, propid, propvalue):
   
-  if nodeid not in node:
-    setnode(nodeid)
+  setnode(nodeid)
 
   if propid in prop and nodeid in prop[propid] and prop[propid][nodeid] == propvalue:
     return
@@ -221,11 +224,9 @@ def remnodeprop(nodeid, propid):
 
 def setnoderel(sourceid, relid, targetid, propid=None, propvalue=None):
 
-  if sourceid not in node:
-    setnode(sourceid)
+  setnode(sourceid)
 
-  if targetid not in node:
-    setnode(targetid)
+  setnode(targetid)
 
   if relid in rel and sourceid in rel[relid] and targetid in rel[relid][sourceid] and propid is not None and propid in rel[relid][sourceid][targetid] and rel[relid][sourceid][targetid][propid] == propvalue:
     return
