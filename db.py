@@ -16,20 +16,11 @@ nodeprop = {} # nodeprop[nodeid][propid]
 noderel = {} # noderel[sourceid][relid][targetid][relpropid]
 nodebackrel = {} # nodebackrel[targetid][relid][sourceid][relpropid]
 
-def nodepath():
-  return dbpath / 'nodes.yml'
 
-
-def colpath(colid):
-  return dbpath / 'collections' / (colid + '.yml')
-
-
-def proppath(propid):
-  return dbpath / 'properties' / (propid + '.yml')
-
-
-def relpath(relid):
-  return dbpath / 'relationships' / (relid + '.yml')
+def nodepath(): return dbpath / 'nodes.yml'
+def colpath(colid): return dbpath / 'collections' / (colid + '.yml')
+def proppath(propid): return dbpath / 'properties' / (propid + '.yml')
+def relpath(relid): return dbpath / 'relationships' / (relid + '.yml')
 
 
 def load(dirpath):
@@ -120,16 +111,20 @@ def remnode(nodeid):
   if nodeid not in node:
     return
 
-  node.pop(nodeid, None)
-  savenode()
-
   if nodeid in nodecol:
+    for colid in list(nodecol[nodeid]):
+      remnodecol(nodeid, colid)
 
-    for colid in nodecol[nodeid]:
-      col[colid].pop(nodeid, None)
-      savecol(colid)
+  if nodeid in nodeprop:
+    for propid in list(nodeprop[nodeid]):
+      remnodeprop(nodeid, propid)
 
-    nodecol.pop(nodeid, None)
+  if nodeid in noderel:
+    for relid in list(noderel[nodeid]):
+      remnoderel(nodeid, relid)
+
+  del node[nodeid]
+  savenode()
 
 
 def remcol(colid):
