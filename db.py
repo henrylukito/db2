@@ -334,70 +334,67 @@ def remrel(relid):
     remnoderel(sourceid, relid)
 
 
-def parseset(res):
+def quickset():
 
-  def parseprop(propstr):
+  while True:
 
-    propdict = {}
-
-    propstrs = [x.strip() for x in propstr.split(',')]
-
-    for propstr in propstrs:
-      propid, propval = [x.strip() for x in propstr.split('=')]
-      propdict[propid] = eval(propval)
-
-    return propdict
-
-  def parsenode(nodestr):
-
-    propsplit = [x.strip() for x in nodestr.split('.', 1)]
-    colsplit = [x.strip() for x in propsplit[0].split(':')]
-
-    nodeid = colsplit[0]
-
-    setnode(nodeid)
-
-    if len(colsplit) > 1:
-      colids = colsplit[1:]
-      for colid in colids:
-        setnodecol(nodeid, colid)
-
-    if len(propsplit) == 2:
-      propstr = propsplit[1]
-      propdict = parseprop(propstr)
-      for propid, propval in propdict.items():
-        setnodeprop(nodeid, propid, propval)
-
-    return nodeid
-
-  relsplit = [x.strip() for x in res.split('>')]
-
-  if len(relsplit) != 1 and len(relsplit) != 3:
-    raise ParseError
-
-  lnodestrs = [x.strip() for x in relsplit[0].split(';')]
-  lnodes = [parsenode(lnodestr) for lnodestr in lnodestrs]
-
-  if len(relsplit) == 3:
-    rnodestrs = [x.strip() for x in relsplit[2].split(';')]
-    rnodes = [parsenode(rnodestr) for rnodestr in rnodestrs]
-
-    relpropsplit = [x.strip() for x in relsplit[1].split('.', 1)]
-    relid = relpropsplit[0]
-    if len(relpropsplit) > 1:
-      relpropdict = parseprop(relpropsplit[1])
-
-    for lnode in lnodes:
-      for rnode in rnodes:
-        if len(relpropsplit) > 1:
-          for relpropid, relpropvalue in relpropdict.items():
-            setnoderel(lnode, relid, rnode, relpropid, relpropvalue)
-        else:
-          setnoderel(lnode, relid, rnode)
-
-
-def qset():
-  res = input()
-  while res != 'q':
-    parseset(res)
     res = input()
+
+    def parseprop(propstr):
+
+      propdict = {}
+
+      propstrs = [x.strip() for x in propstr.split(',')]
+
+      for propstr in propstrs:
+        propid, propval = [x.strip() for x in propstr.split('=')]
+        propdict[propid] = eval(propval)
+
+      return propdict
+
+    def parsenode(nodestr):
+
+      propsplit = [x.strip() for x in nodestr.split('.', 1)]
+      colsplit = [x.strip() for x in propsplit[0].split(':')]
+
+      nodeid = colsplit[0]
+
+      setnode(nodeid)
+
+      if len(colsplit) > 1:
+        colids = colsplit[1:]
+        for colid in colids:
+          setnodecol(nodeid, colid)
+
+      if len(propsplit) == 2:
+        propstr = propsplit[1]
+        propdict = parseprop(propstr)
+        for propid, propval in propdict.items():
+          setnodeprop(nodeid, propid, propval)
+
+      return nodeid
+
+    relsplit = [x.strip() for x in res.split('>')]
+
+    if len(relsplit) != 1 and len(relsplit) != 3:
+      raise ParseError
+
+    lnodestrs = [x.strip() for x in relsplit[0].split(';')]
+    lnodes = [parsenode(lnodestr) for lnodestr in lnodestrs]
+
+    if len(relsplit) == 3:
+      rnodestrs = [x.strip() for x in relsplit[2].split(';')]
+      rnodes = [parsenode(rnodestr) for rnodestr in rnodestrs]
+
+      relpropsplit = [x.strip() for x in relsplit[1].split('.', 1)]
+      relid = relpropsplit[0]
+      if len(relpropsplit) > 1:
+        relpropdict = parseprop(relpropsplit[1])
+
+      for lnode in lnodes:
+        for rnode in rnodes:
+          if len(relpropsplit) > 1:
+            for relpropid, relpropvalue in relpropdict.items():
+              setnoderel(lnode, relid, rnode, relpropid, relpropvalue)
+          else:
+            setnoderel(lnode, relid, rnode)
