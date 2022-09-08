@@ -1,15 +1,21 @@
 # db2
 
-Python script to help manage a folder of YAML files as a (graph) database. The data from YAML files can be loaded as Python objects, and editing these objects also updates the files.
-
-## How to create the folder with starting files
-
-Call `load(dbname)`. A folder named `dbname` will be created on current working directory if not already created, together with some starting directories and files, and the database will also be 'loaded' (below).
+Python module to help manage a folder of YAML files as a (graph) database. The data from YAML files can be loaded into dictionary objects, and editing these dict objects with provided functions also updates the YAML files.
 
 
-## Load objects from files
+## How to create new database
+
+Call `load(dbname)`. A folder named `dbname` will be created on current working directory if not already created, together with some starting subfolders and files. The database will also be 'loaded' (below).
+
+
+## How to load dict objects from YAML files
 
 Also call `load(dbname)`. This module's dict objects such as `node`, `col`, `prop`, `rel` etc will be populated according to data in files.
+
+
+## How to save dict objects to YAML files
+
+After you load the database, any call to provided functions such as `setnode`, `setnodeprop`, `remnode` etc will save changes to YAML files as needed.
 
 
 ## What is col?
@@ -17,7 +23,7 @@ Also call `load(dbname)`. This module's dict objects such as `node`, `col`, `pro
 It stands for collection. A collection is just a way to have a subset list of nodes. A node can exist in multiple collections.
 
 
-## What is the difference between `col` and `nodecol` dict?
+## I see something like `col` and `nodecol` dict. What is the difference?
 
 The keys for `col` dict are col ids, while the keys for `nodecol` are node ids.
 
@@ -36,12 +42,12 @@ These functions will update the files immediately. They also ensure the dict obj
 
 These functions will automatically add nodes, properties and others if they don't already exist, instead of being strict by throwing errors.
 
-These functions will automatically remove collections, properties, relationships when they become empty and will also delete their files.
+These functions will automatically remove collections, properties, relationships when they become empty (have no node) and will also delete their YAML files.
 
 
 ## Quicker way to add nodes/properties/relationships
 
-There is a function `quickset` that will keep looping for user input until it's exited with e.g., keyboard interrupt (ctrl+c).
+There is a function `quickset` that will keep looping for user input until it's keyboard interrupted (ctrl+c).
 
 The input has certain syntax:
 
