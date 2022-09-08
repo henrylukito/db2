@@ -234,6 +234,25 @@ def remcol(colid):
   colpath(colid).unlink()
 
 
+def renamecol(colid, newcolid):
+
+  if colid not in col:
+    return
+
+  if newcolid in col:
+    raise Exception("There's already col with that id")
+
+  for nodeid in col[colid]:
+    nodecol[nodeid].setdefault(newcolid)
+    del nodecol[nodeid][colid]
+
+  col[newcolid] = col[colid]
+  del col[colid]
+
+  savecol(newcolid)
+  colpath(colid).unlink()
+
+
 def saveprop(propid):
 
   with proppath(propid).open('w', encoding='utf-8') as fp:
