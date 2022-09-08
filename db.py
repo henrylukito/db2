@@ -446,6 +446,25 @@ def remrel(relid):
     remnoderel(sourceid, relid)
 
 
+def renamerelprop(relid, propid, newpropid):
+
+  if relid not in rel:
+    return
+
+  for sourceid in rel[relid]:
+    for targetid in rel[relid][sourceid]:
+
+      if propid in rel[relid][sourceid][targetid]:
+
+        # if some relationships already use new prop id
+        # we assume they are already correct; we're just updating relationships that still use old prop id
+
+        if newpropid not in rel[relid][sourceid][targetid]:
+          rel[relid][sourceid][targetid][newpropid] = rel[relid][sourceid][targetid][propid]
+
+        del rel[relid][sourceid][targetid][propid]
+
+
 def quickset(arg=None):
 
   def parseset(arg):
