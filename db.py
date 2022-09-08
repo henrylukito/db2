@@ -1,5 +1,6 @@
 from lib2to3.pgen2.parse import ParseError
 from pathlib import Path
+from xml.dom import NotFoundErr
 import yaml
 
 
@@ -114,6 +115,68 @@ def remnode(nodeid):
       remnoderel(nodeid, relid)
 
   del node[nodeid]
+  savenode()
+
+
+def renamenode(nodeid, newnodeid):
+
+  if nodeid not in node:
+    return
+
+  if newnodeid in node:
+    raise Exception("there's already a node with that id")
+
+  del node[nodeid]
+  node.setdefault(newnodeid)
+
+  if nodeid in nodecol:
+    for colid in nodecol[nodeid]:
+      col[colid].setdefault(newnodeid)
+      del col[colid][nodeid]
+      savecol(colid)
+    nodecol[newnodeid] = nodecol[nodeid]
+    del nodecol[nodeid]
+
+  if nodeid in nodeprop:
+    for propid in nodeprop[nodeid]:
+      prop[propid][newnodeid] = prop[propid][nodeid]
+      del prop[propid][nodeid]
+      saveprop(propid)
+    nodeprop[newnodeid] = nodeprop[nodeid]
+    del nodeprop[nodeid]
+
+  if nodeid in noderel:
+
+    for relid in noderel[nodeid]:
+      rel[relid][newnodeid] = rel[relid][nodeid]
+      del rel[relid][nodeid]
+      saverel(relid)
+
+      for targetid in rel[relid][newnodeid]:
+        backrel[relid][targetid][newnodeid] = backrel[relid][targetid][nodeid]
+        del backrel[relid][targetid][nodeid]
+        nodebackrel[targetid][relid][newnodeid] = nodebackrel[targetid][relid][nodeid]
+        del nodebackrel[targetid][relid][nodeid]
+
+    noderel[newnodeid] = noderel[nodeid]
+    del noderel[nodeid]
+
+  if nodeid in nodebackrel:
+
+    for relid in nodebackrel[nodeid]:
+      backrel[relid][newnodeid] = backrel[relid][nodeid]
+      del backrel[relid][nodeid]
+
+      for sourceid in backrel[relid][newnodeid]:
+        rel[relid][sourceid][newnodeid] = rel[relid][sourceid][nodeid]
+        del rel[relid][sourceid][nodeid]
+        noderel[sourceid][relid][newnodeid] = noderel[sourceid][relid][nodeid]
+        del noderel[sourceid][relid][nodeid]
+        saverel(relid)
+
+    nodebackrel[newnodeid] = nodebackrel[nodeid]
+    del nodebackrel[nodeid]
+
   savenode()
 
 
