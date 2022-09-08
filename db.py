@@ -84,24 +84,6 @@ def savenode():
     yaml.safe_dump(list(node), fp, default_flow_style=False)
 
 
-def savecol(colid):
-
-  with colpath(colid).open('w', encoding='utf-8') as fp:
-    yaml.safe_dump(list(col[colid]), fp, default_flow_style=False)
-
-
-def saveprop(propid):
-
-  with proppath(propid).open('w', encoding='utf-8') as fp:
-    yaml.safe_dump(prop[propid], fp, default_flow_style=False)
-
-
-def saverel(relid):
-
-  with relpath(relid).open('w', encoding='utf-8') as fp:
-    yaml.safe_dump(rel[relid], fp, default_flow_style=False) 
-
-
 def setnode(nodeid):
 
   if nodeid in node:
@@ -116,9 +98,12 @@ def remnode(nodeid):
   if nodeid not in node:
     return
 
+  # node might be in collections, might have properties and relationships etc
+  # so it's not sufficient to just remove them
+
   if nodeid in nodecol:
-    for colid in list(nodecol[nodeid]):
-      remnodecol(nodeid, colid)
+    for colid in list(nodecol[nodeid]): # copy to list because nodecol might change during iteration
+      remnodecol(nodeid, colid) # this will call savecol, remcol etc when needed
 
   if nodeid in nodeprop:
     for propid in list(nodeprop[nodeid]):
@@ -132,21 +117,15 @@ def remnode(nodeid):
   savenode()
 
 
-def remcol(colid):
+def savecol(colid):
 
-  if colid not in col:
-    return
-
-  for nodeid in col[colid]:
-    nodecol[nodeid].pop(colid, None)
-
-  col.pop(colid, None)
-  colpath(colid).unlink()
+  with colpath(colid).open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(list(col[colid]), fp, default_flow_style=False)
 
 
 def setnodecol(nodeid, colid):
   
-  setnode(nodeid)
+  setnode(nodeid) # will create node and store in node dict if not exist
 
   if colid in col and nodeid in col[colid]:
     return
@@ -168,25 +147,34 @@ def remnodecol(nodeid, colid):
   if nodeid not in col[colid]:
     return
 
-  col[colid].pop(nodeid, None)
-  nodecol[nodeid].pop(colid, None)
+  del col[colid][nodeid]
+  del nodecol[nodeid][colid]
 
-  if not nodecol[nodeid]:
-    nodecol.pop(nodeid, None)
+  if not nodecol[nodeid]: # if nodecol[nodeid] become empty as result of removing col
+    del nodecol[nodeid] # remove nodeid from nodecol (this means node has no collection)
 
-  savecol(colid) if col[colid] else remcol(colid)
+  if not col[colid]: # if col[colid] become empty as result of removing node
+    remcol(colid) # will delete col file
+  else:
+    savecol(colid) 
 
 
-def remprop(propid):
+def remcol(colid):
 
-  if propid not in prop:
+  if colid not in col:
     return
 
-  for nodeid in prop[propid]:
-    nodeprop[nodeid].pop(propid, None)
+  for nodeid in col[colid]:
+    del nodecol[nodeid][colid]
 
-  prop.pop(propid, None)
-  proppath(propid).unlink()
+  del col[colid]
+  colpath(colid).unlink()
+
+
+def saveprop(propid):
+
+  with proppath(propid).open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(prop[propid], fp, default_flow_style=False)
 
 
 def setnodeprop(nodeid, propid, propvalue):
@@ -213,13 +201,34 @@ def remnodeprop(nodeid, propid):
   if nodeid not in prop[propid]:
     return
 
-  prop[propid].pop(nodeid, None)
-  nodeprop[nodeid].pop(propid, None)
+  del prop[propid][nodeid]
+  del nodeprop[nodeid][propid]
 
   if not nodeprop[nodeid]:
-    nodeprop.pop(nodeid, None)
+    del nodeprop[nodeid]
 
-  saveprop(propid) if prop[propid] else remprop(propid)
+  if not prop[propid]:
+    remprop(propid)
+  else:
+    saveprop(propid)
+
+
+def remprop(propid):
+
+  if propid not in prop:
+    return
+
+  for nodeid in prop[propid]:
+    nodeprop[nodeid].pop(propid, None)
+
+  prop.pop(propid, None)
+  proppath(propid).unlink()
+
+
+def saverel(relid):
+
+  with relpath(relid).open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(rel[relid], fp, default_flow_style=False) 
 
 
 def setnoderel(sourceid, relid, targetid, propid=None, propvalue=None):
@@ -228,8 +237,11 @@ def setnoderel(sourceid, relid, targetid, propid=None, propvalue=None):
 
   setnode(targetid)
 
-  if relid in rel and sourceid in rel[relid] and targetid in rel[relid][sourceid] and propid is not None and propid in rel[relid][sourceid][targetid] and rel[relid][sourceid][targetid][propid] == propvalue:
-    return
+  if relid in rel and sourceid in rel[relid] and targetid in rel[relid][sourceid]:
+    if propid is None: # if don't specify property and relationship already exists
+      return
+    if propid is not None and propid in rel[relid][sourceid][targetid] and rel[relid][sourceid][targetid][propid] == propvalue: # if specify property but property exist and has same value
+      return
 
   rel.setdefault(relid, {}).setdefault(sourceid, {}).setdefault(targetid, {})
 
@@ -265,7 +277,7 @@ def remnoderelprop(sourceid, relid, targetid, propid):
   if propid not in rel[relid][sourceid][targetid]:
     return
 
-  del rel[relid][sourceid][targetid][propid]
+  del rel[relid][sourceid][targetid][propid] # no need to do backrel, noderel, nodebackrel since they refer to same dict object
 
   saverel(relid)
 
@@ -288,9 +300,9 @@ def remnodereltarget(sourceid, relid, targetid):
     return
 
   del rel[relid][sourceid][targetid]
-  if not rel[relid][sourceid]:
+  if not rel[relid][sourceid]: # if a source's relationship no longer has target
     del rel[relid][sourceid]
-  if not rel[relid]:
+  if not rel[relid]: # if no more source in relationship
     del rel[relid]
 
   del noderel[sourceid][relid][targetid]
@@ -311,7 +323,10 @@ def remnodereltarget(sourceid, relid, targetid):
   if not nodebackrel[targetid]:
     del nodebackrel[targetid]
 
-  saverel(relid) if relid in rel else relpath(relid).unlink()
+  if relid not in rel: # we deleted the relationship above
+    relpath(relid).unlink()
+  else:
+    saverel(relid)
 
 
 def remnoderel(sourceid, relid):
