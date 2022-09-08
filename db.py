@@ -124,7 +124,7 @@ def renamenode(nodeid, newnodeid):
     return
 
   if newnodeid in node:
-    raise Exception("there's already a node with that id")
+    raise Exception("There's already node with that id")
 
   del node[nodeid]
   node.setdefault(newnodeid)
@@ -304,6 +304,25 @@ def remprop(propid):
     nodeprop[nodeid].pop(propid, None)
 
   prop.pop(propid, None)
+  proppath(propid).unlink()
+
+
+def renameprop(propid, newpropid):
+
+  if propid not in prop:
+    return
+
+  if newpropid in prop:
+    raise Exception("There's already prop with that id")
+
+  for nodeid in prop[propid]:
+    nodeprop[nodeid][newpropid] = nodeprop[nodeid][propid]
+    del nodeprop[nodeid][propid]
+
+  prop[newpropid] = prop[propid]
+  del prop[propid]
+
+  saveprop(newpropid)
   proppath(propid).unlink()
 
 
