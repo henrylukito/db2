@@ -464,6 +464,35 @@ def renamerelprop(relid, propid, newpropid):
 
         del rel[relid][sourceid][targetid][propid]
 
+  saverel(relid)
+
+
+def renamerel(relid, newrelid):
+
+  if relid not in rel:
+    return
+
+  if newrelid in rel:
+    raise Exception("There's already rel with that id")
+
+  for sourceid in rel[relid]:
+
+    for targetid in rel[relid][sourceid]:
+      nodebackrel[targetid][newrelid] = nodebackrel[targetid][relid]
+      del nodebackrel[targetid][relid]
+
+    noderel[sourceid][newrelid] = noderel[sourceid][relid]
+    del noderel[sourceid][relid]
+
+  rel[newrelid] = rel[relid]
+  del rel[relid]
+
+  backrel[newrelid] = backrel[relid]
+  del backrel[relid]
+
+  saverel(newrelid)
+  relpath(relid).unlink()
+
 
 def quickset(arg=None):
 
