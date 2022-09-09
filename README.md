@@ -77,7 +77,7 @@ The `set` functions will generally add elements (e.g., node, col, prop) if they 
 The `rem` functions will generally remove elements that have become empty (i.e., not associated to any node) (e.g., col, prop, and rel) and will also delete their YAML files.
 
 
-## Quicker way to add nodes/properties/relationships
+## Quick way to set nodes/properties/relationships
 
 There is a function `quickset` that, if you pass no argument, will keep looping for user input until it's keyboard interrupted (ctrl+c).
 
@@ -147,7 +147,7 @@ But this means both these monsters drop the same set of items and at same probab
 
 Even though complex statements are technically possible, e.g.:
 
-`slime:monster.health=100.elem='water'>drops>potion:item:healingitem.sellprice=50;jelly:item:material:food.sellprice=100,hungerfill=0.1`
+`slime:monster.health=100.elem='water'>drops>potion:item:healingitem.sellprice=50;jelly:item:material:food.sellprice=100,stomach=0.1`
 
 `quickset` is meant for iterating quickly with shorter statements like this:
 
@@ -165,10 +165,10 @@ Even though complex statements are technically possible, e.g.:
 
 `jelly:item:material.sellprice=100`
 
-`jelly:food.hungerfill=0.1`
+`jelly:food.stomach=0.1`
 
 
-# How to ensure nodes/relationships have certain properties?
+## How to ensure nodes/relationships have certain properties?
 
 You can specify what properties a node under a certain collection should have with `setcolprop`. Dictionary object is `colprop` and YAML file is `collectionproperties.yml`.
 
@@ -181,7 +181,7 @@ Equivalent for relationship is `relprop`. By calling `fillrelprop`, it will sear
 
 Aside from editing and ensuring the files and dict objects are consistent, the module currently doesn't do much when it comes to querying/data analysis.
 
-To start with, you can use various Python features to query the dict objects like a database.
+To start with, you can use various Python features to query the dict objects like a database. Then you can define helper/convenience functions.
 
 ### Examples:
 
