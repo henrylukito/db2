@@ -486,27 +486,30 @@ def remrel(relid):
     remnoderel(sourceid, relid)
 
 
-def renamerelprop(relid, propid, newpropid):
+def renamenoderelprop(sourceid, relid, targetid, propid, newpropid):
 
   if propid == newpropid:
+    return
+
+  if sourceid not in node:
     return
 
   if relid not in rel:
     return
 
-  for sourceid in rel[relid]:
-    for targetid in rel[relid][sourceid]:
+  if sourceid not in rel[relid]:
+    return
 
-      if propid in rel[relid][sourceid][targetid]:
+  if targetid not in rel[relid][sourceid]:
+    return
 
-        if newpropid not in rel[relid][sourceid][targetid]:
-          rel[relid][sourceid][targetid][newpropid] = rel[relid][sourceid][targetid][propid]
+  if propid not in rel[relid][sourceid][targetid]:
+    return
 
-        # if some relationships already use new prop id
-        # we assume they are already correct; we're just updating relationships that still use old prop id
-        # so if new prop id exists, we just delete old prop id
+  if newpropid not in rel[relid][sourceid][targetid]:
+    rel[relid][sourceid][targetid][newpropid] = rel[relid][sourceid][targetid][propid]
 
-        del rel[relid][sourceid][targetid][propid]
+  del rel[relid][sourceid][targetid][propid]
 
   saverel(relid)
 
