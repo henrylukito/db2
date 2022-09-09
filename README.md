@@ -225,7 +225,7 @@ Display all slime properties:
 
 List all water element monsters:
 
-`[monster for monter in col['monster'] if nodeprop[monster].get('elem') == 'water']`
+`[monster for monter in col['monster'] if nodeprop.get('monster', {}).get('elem') == 'water']`
 
 List all monsters that are also in pet collection (2 collections):
 
