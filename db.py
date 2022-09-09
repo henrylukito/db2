@@ -539,7 +539,7 @@ def savecolprop():
     yaml.safe_dump(colprop, fp, default_flow_style=False)
 
 
-def setcolprop(colid, propid, proptype):
+def setcolprop(colid, propid, proptype=None):
 
   # accept even if colid not yet exist, the colid might be created later
 
@@ -554,6 +554,39 @@ def remcolprop(colid, propid):
     del colprop[colid][propid]
 
   savecolprop()
+
+
+def fillcolprop(colid, propid=None):
+
+  if colid not in col: # no colid means no node with that colid, so no node to fill prop
+    return
+
+  if colid not in colprop:
+    return
+
+  if propid and propid not in colprop[colid]: # user specify propid but propid not in colprop[colid]
+    return
+
+  propids = [propid] if propid else list(colprop[colid]) # if propid not specified, we go through all propids of colprop[colid]
+
+  for propid in propids:
+
+    proptype = eval(colprop[colid][propid]) if colprop[colid][propid] else (lambda x: eval(x))
+
+    try:
+
+      for nodeid in col[colid]:
+
+        if nodeid not in nodeprop or propid not in nodeprop[nodeid]:
+
+            ans = input(f"{nodeid}.{propid}: ")
+
+            prop.setdefault(propid, {})[nodeid] = proptype(ans)
+            nodeprop.setdefault(nodeid, {})[propid] = prop[propid][nodeid]
+            saveprop(propid)
+
+    except KeyboardInterrupt:
+      break
 
 
 def quickset(arg=None):
