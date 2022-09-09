@@ -20,7 +20,8 @@ nodebackrel = {} # nodebackrel[targetid][relid][sourceid] = relpropdict
 # rel, backrel, noderel, noderbackrel references the same relpropdict
 # relpropdict[relpropid] = relpropvalue
 
-colprop = {} # colprop[colid][propid] = type constructor
+colprop = {} # colprop[colid][propid] = typestr
+relprop = {} # relprop[relid][propid] = typestr
 
 
 def nodepath(): return dbpath / 'nodes.yml'
@@ -28,6 +29,7 @@ def colpath(colid): return dbpath / 'collections' / (colid + '.yml')
 def proppath(propid): return dbpath / 'properties' / (propid + '.yml')
 def relpath(relid): return dbpath / 'relationships' / (relid + '.yml')
 def colproppath(): return dbpath / 'collectionproperties.yml'
+def relproppath(): return dbpath / 'relationshipproperties.yml'
 
 
 def load(dirpath):
@@ -44,7 +46,8 @@ def load(dirpath):
   nodebackrel.clear()
 
   colprop.clear()
-
+  relprop.clear()
+  
   global dbpath
   dbpath = Path(dirpath)
 
@@ -54,6 +57,7 @@ def load(dirpath):
   (dbpath / 'relationships').mkdir(parents=True, exist_ok=True)
   nodepath().touch(exist_ok=True)
   colproppath().touch(exist_ok=True)
+  relproppath().touch(exist_ok=True)
 
   # load node
   node.update(dict.fromkeys(yaml.safe_load(nodepath().read_text(encoding='utf-8')) or []))
@@ -94,6 +98,9 @@ def load(dirpath):
 
   # load colprop
   colprop.update(yaml.safe_load(colproppath().read_text(encoding='utf-8')) or {})
+
+  # load relprop
+  relprop.update(yaml.safe_load(relproppath().read_text(encoding='utf-8')) or {})
 
 
 def savenode():
@@ -277,7 +284,8 @@ def renamecol(colid, newcolid):
 
   # rename colid in colprop
   if colid in colprop:
-    colprop[newcolid] = colprop[colid]
+    if newcolid not in colprop:
+      colprop[newcolid] = colprop[colid]
     del colprop[colid]
     savecolprop()
 
@@ -532,6 +540,13 @@ def renamerel(relid, newrelid):
   saverel(newrelid)
   relpath(relid).unlink()
 
+  # rename relid in relprop
+  if relid in relprop:
+    if newrelid not in relprop:
+      relprop[newrelid] = relprop[relid]
+    del relprop[relid]
+    saverelprop()
+
 
 def savecolprop():
 
@@ -567,7 +582,7 @@ def fillcolprop(colid, propid=None):
   if propid and propid not in colprop[colid]: # user specify propid but propid not in colprop[colid]
     return
 
-  propids = [propid] if propid else list(colprop[colid]) # if propid not specified, we go through all propids of colprop[colid]
+  propids = [propid] if propid else colprop[colid] # if propid not specified, we go through all propids of colprop[colid]
 
   for propid in propids:
 
@@ -584,6 +599,63 @@ def fillcolprop(colid, propid=None):
             prop.setdefault(propid, {})[nodeid] = proptype(ans)
             nodeprop.setdefault(nodeid, {})[propid] = prop[propid][nodeid]
             saveprop(propid)
+
+    except KeyboardInterrupt:
+      break
+
+
+def saverelprop():
+
+  with relproppath().open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(relprop, fp, default_flow_style=False)
+
+
+def setrelprop(relid, relpropid, relproptype=None):
+
+  # accept even if relid not yet exist, the relid might be created later
+
+  relprop.setdefault(relid, {})[relpropid] = relproptype
+
+  saverelprop()
+
+
+def remrelprop(relid, relpropid):
+
+  if relid in relprop and relpropid in relprop[relid]:
+    del relprop[relid][relpropid]
+
+  saverelprop()
+
+
+def fillrelprop(relid, relpropid=None):
+
+  if relid not in rel:
+    return
+
+  if relid not in relprop:
+    return
+
+  if relpropid and relpropid not in relprop[relid]:
+    return
+
+  relpropids = [relpropid] if relpropid else relprop[relid]
+
+  for relpropid in relpropids:
+
+    relproptype = eval(relprop[relid][relpropid]) if relprop[relid][relpropid] else (lambda x: eval(x))
+
+    try:
+      
+      for sourceid in rel[relid]:
+        for targetid in rel[relid][sourceid]:
+
+          if relpropid not in rel[relid][sourceid][targetid]:
+
+            ans = input(f"{sourceid}>{relid}>{targetid} {relpropid}: ")
+
+            rel[relid][sourceid][targetid][relpropid] = relproptype(ans)
+            saverel(relid)
+
 
     except KeyboardInterrupt:
       break
