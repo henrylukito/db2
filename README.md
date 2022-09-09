@@ -1,21 +1,21 @@
 # db2
 
-Python module to help manage a folder of YAML files as a (graph) database. The data from YAML files can be loaded into dictionary objects, and editing these dict objects with provided functions also updates the YAML files.
+Python module to help manage a folder of YAML files as a (graph) database. The data from YAML files can be loaded in Python program as dict objects, and editing these dict objects with provided functions will also update the YAML files.
 
 
 ## How to create new database
 
-Call `load(dbname)`. A folder named `dbname` will be created on current working directory if not already created, together with some starting subdirectories and files. The database will also be loaded (see below).
+Call `load('path-to-db-folder')`. A folder named `path-to-db-folder` will be created according to the path name if it doesn't yet exist, together with some starting subfolders and files. The database will also be loaded (see below).
 
 
 ## How to load dict objects from YAML files
 
-Call `load(dbname)`. This module's dict objects such as `node`, `col`, `prop`, `rel` etc will be populated according to data in files.
+Call `load('path-to-db-folder')`. This module's dictionary objects such as `node`, `col`, `prop`, `rel` etc will be populated according to data from the files.
 
 
 ## How to save dict objects to YAML files
 
-After you load the database, any call to provided functions such as `setnode`, `setnodeprop`, `remnode` etc will save changes to YAML files as needed.
+After you load the database, any call to provided functions such as `setnode`, `setnodeprop`, `remnode` etc will save the changes to YAML files.
 
 
 ## What is col?
@@ -23,41 +23,43 @@ After you load the database, any call to provided functions such as `setnode`, `
 It stands for collection. A collection is just a way to have a subset list of nodes. Same node can exist in multiple collections.
 
 
-## I see something like `col` and `nodecol`. What is the difference?
+## I see something like `col` and `nodecol` dicts. What is the difference?
 
 The keys for `col` dict are col ids, while the keys for `nodecol` are node ids.
 
 You use `col` dict to find out all nodes in a collection and `nodecol` dict to find out all collections a node is in.
 
-This pattern applies to other dicts like `prop` and `nodeprop`, `rel` and `noderel` etc.
+This pattern applies to other pairs of dicts like `prop` and `nodeprop`, `rel` and `noderel` etc.
 
 
 ## How to edit nodes/collections/properties/relationships?
 
-To add, call functions like `setnode`, `setnodecol`, `setnodeprop`, `setnoderel` etc.
+To add/update, call functions that begin with `set` like `setnode`, `setnodecol`, `setnodeprop` etc.
 
-To remove, call functions like `remnode`, `remnodecol`, `remnodeprop`, `remnoderel` etc.
+To remove, call functions that begin with `rem` like `remnode`, `remnodecol`, `remnodeprop` etc.
 
-To rename, call functions like `renamenode`, `renameprop`, `renamerel` etc.
+To rename, call functions like begin with `rename` `renamenode`, `renameprop`, `renamerel` etc.
 
-These functions will update the files immediately. They also ensure the dict objects remain consistent, e.g., if `col` is updated, `nodecol` is also updated.
+These functions will update the files immediately and keep the dict objects consistent.
 
-These functions will automatically add nodes, properties and others if they don't already exist, instead of throwing errors.
+The `set` functions will generally add nodes, collections, properties etc if they don't already exist, instead of throwing errors.
 
-These functions will automatically remove collections, properties, relationships when they become empty (have no node) and will also delete their YAML files.
+The `rem` functions will generally remove collections, properties, relationships etc that have become empty and will also delete their YAML files.
 
 
 ## Quicker way to add nodes/properties/relationships
 
 There is a function `quickset` that, if you pass no argument, will keep looping for user input until it's keyboard interrupted (ctrl+c).
 
-The input has certain syntax:
+The function will do something based on each user input statement.
+
+The statement has certain syntax:
 
 Add a node:
 
 `slime`
 
-If node already exists, nothing will happen (no duplicate is created).
+If node already exists, nothing will happen (no error is thrown).
 
 Add a node and put into a collection:
 
@@ -65,7 +67,7 @@ Add a node and put into a collection:
 
 If the collection doesn't yet exist, it will be created.
 
-You can put the node in multiple collections at once like this:
+You can put node in multiple collections at once like this:
 
 `slime:monster:pet`
 
@@ -93,52 +95,54 @@ You can add property to the relationship:
 
 Nodes that do not yet exist, including relationship targets, will be created.
 
-And just like above examples, it can be combined with adding collections and properties:
-
-`slime:monster:pet.health=100,element='water'>drops.probability=0.5>potion:healingitem.sellprice=50`
-
 You can add multiple relationship targets like this:
 
-`slime>drops>potion;jelly`
+`slime>drops.probability=0.5>potion;jelly`
+
+This means slime drops potion and jelly at the same 0.5 probability.
+
+But if slime drops jelly at different probability, it should be specified separately:
+
+`slime>drops.probablity=0.5>potion`
+
+`slime>drops.probability=0.1>jelly`
 
 In fact you can also specify multiple sources like this:
 
-`slime;goblin>drops>potion;jelly`
+`slime;goblin>drops.probability=0.5>potion;jelly`
 
-It means both these monsters drop the same set of items.
+It means both these monsters drop the same set of items and both at same probability for both items
 
 Even though complex statements are possible, e.g.:
 
-`slime:monster.health=100>drops>potion:healingitem.sellprice=50;jelly:food.sellprice=100,hungerfill=0.1`
+`slime:monster.health=100.elem='water'>drops>potion:item:healingitem.sellprice=50;jelly:item:material:food.sellprice=100,hungerfill=0.1`
 
-it might be more intuitive to iterate with shorter statements like this:
+`quickset` is meant for iterating quickly with shorter statements like this:
 
 `slime:monster`
 
 `slime.health=100`
 
+`slime.elem='water'`
+
 `slime>drops>potion;jelly`
 
-`potion:healingitem.sellprice=50`
+`potion:item:healingitem`
 
-`jelly:food.sellprice=100`
+`potion.sellprice=50`
 
-`jelly.hungerfill=0.1`
+`jelly:item:material.sellprice=100`
 
-Note if slime drops potion and jelly at different probabilites, it has to be specified separately:
-
-`slime>drops.probability=0.5>potion`
-
-`slime>drops.probability=0.2>jelly`
-
-The syntax for adding property to relationship is admittedly more annoying than others.
+`jelly:food.hungerfill=0.1`
 
 
-# How to ensure nodes have certain properties/relationships?
+# How to ensure nodes/relationships have certain properties?
 
 You can specify what properties a node under a certain collection should have with `setcolprop`. Object is `colprop` and YAML file is `collectionproperties.yml`.
 
-By calling `fillcolprop`, the function will search for nodes under the collection that do not have the property yet, and ask for property value.
+By calling `fillcolprop`, the function will search for nodes under the collection that do not have the property yet, and prompt user for property value.
+
+Equivalent for relationship is `relprop`. By calling `fillrelprop`, it will search all relationship instances, and prompt user for property value.
 
 
 ## How to use these objects once they're loaded?
