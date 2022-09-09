@@ -1,6 +1,6 @@
 # db2
 
-Python module to help manage a folder of YAML files as a (graph) database. The data from YAML files can be loaded in Python program as dict objects, and editing these dict objects with provided functions will also update the YAML files.
+Python module to help manage a folder of YAML files as a (graph) database. The data from YAML files can be loaded in Python program as dict objects, and editing these dict objects with provided editing functions will save the changes to YAML files.
 
 
 ## How to create new database
@@ -15,7 +15,7 @@ Call `load('path-to-db-folder')`. This module's dictionary objects such as `node
 
 ## How to save dict objects to YAML files
 
-After you load the database, call to edititing functions such as `setnode`, `remcol`, `renameprop` etc will save the changes back to YAML files.
+After you load the database, calls to editing functions such as `setnode`, `remcol`, `renameprop` etc will save the changes back to YAML files.
 
 
 ## What is col?
@@ -170,18 +170,18 @@ Even though complex statements are technically possible, e.g.:
 
 ## How to ensure nodes/relationships have certain properties?
 
-You can specify what properties a node under a certain collection should have with `setcolprop`. Dictionary object is `colprop` and YAML file is `collectionproperties.yml`.
+You can specify what properties a node under a certain collection should have with `setcolprop`. The dict object is `colprop` and YAML file is `collectionproperties.yml`.
 
-By calling `fillcolprop`, the function will search for nodes under the collection that do not yet have that property, and prompt user for the property value, which will then be saved.
+There's a special function called `fillcolprop`, which when called will search for nodes in that collection that do not yet have that property, and prompt user for the property value, which will then be saved.
 
-Equivalent for relationship is `relprop`. By calling `fillrelprop`, it will search all relationship instances (i.e., between different source node and target node) that do not yet have the property, and prompt user for the property value.
+The equivalent for relationship is `relprop`. It will search all relationship instances (i.e., between different source node and target node) that do not yet have the property, and prompt user for the property value.
 
 
 ## How to use these objects once they're loaded?
 
-Aside from editing and ensuring the files and dict objects are consistent, the module currently doesn't do much when it comes to querying/data analysis.
+The module currently doesn't extend its scope much beyond editing and ensuring the dict objects and data files are in sync.
 
-To start with, you can use various Python features to query the dict objects like a database. Then you can define helper/convenience functions.
+To start with, you can use various Python features to query the dict objects like a database (e.g., list comprehension). You might want to define helper/convenience functions to ease the syntax.
 
 ### Examples:
 
