@@ -174,7 +174,9 @@ You can specify what properties a node under a certain collection should have wi
 
 There's a special function called `fillcolprop`, which when called will search for nodes in that collection that do not yet have that property, and prompt user for the property value, which will then be saved.
 
-The equivalent for relationship is `relprop`. It will search all relationship instances (i.e., between different source node and target node) that do not yet have the property, and prompt user for the property value.
+The equivalent for relationship is `relprop`. `fillrelprop` will search all relationship instances (i.e., between different source node and target node) that do not yet have the property, and prompt user for the property value.
+
+Loading and saving is not strict, e.g., it doesn't throw errors if a node in a collection doesn't have a property specified in `colprop`. So `colprop` and is more of a way to set up batch input (with `fillcolprop`) than constraints.
 
 
 ## How to use these objects once they're loaded?
@@ -200,6 +202,10 @@ List all nodes in monster collection:
 Count number of nodes in monster collection:
 
 `len(col['monster'])`
+
+List all nodes not in any collection:
+
+`[nodeid for nodeid in node if nodeid not in nodecol]`
 
 List all collections slime is in:
 
