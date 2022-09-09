@@ -20,11 +20,14 @@ nodebackrel = {} # nodebackrel[targetid][relid][sourceid] = relpropdict
 # rel, backrel, noderel, noderbackrel references the same relpropdict
 # relpropdict[relpropid] = relpropvalue
 
+colprop = {} # colprop[colid][propid] = type constructor
+
 
 def nodepath(): return dbpath / 'nodes.yml'
 def colpath(colid): return dbpath / 'collections' / (colid + '.yml')
 def proppath(propid): return dbpath / 'properties' / (propid + '.yml')
 def relpath(relid): return dbpath / 'relationships' / (relid + '.yml')
+def colproppath(): return dbpath / 'collectionproperties.yml'
 
 
 def load(dirpath):
@@ -40,35 +43,46 @@ def load(dirpath):
   noderel.clear()
   nodebackrel.clear()
 
+  colprop.clear()
+
   global dbpath
   dbpath = Path(dirpath)
 
+  # make expected subdirectories and files if they don't exist
   (dbpath / 'collections').mkdir(parents=True, exist_ok=True)
   (dbpath / 'properties').mkdir(parents=True, exist_ok=True)
   (dbpath / 'relationships').mkdir(parents=True, exist_ok=True)
   nodepath().touch(exist_ok=True)
+  colproppath().touch(exist_ok=True)
 
+  # load node
   node.update(dict.fromkeys(yaml.safe_load(nodepath().read_text(encoding='utf-8')) or []))
 
+  # load col
   for filepath in (x for x in (dbpath / 'collections').iterdir() if x.is_file()):
     col[filepath.stem] = dict.fromkeys(yaml.safe_load(filepath.read_text(encoding='utf-8')) or [])
 
+  # update nodecol based on col
   for colid in col:
     for nodeid in col[colid]:
-      setnode(nodeid)
+      setnode(nodeid) # if node doesn't exist, create node and save to nodes.yml
       nodecol.setdefault(nodeid, {}).setdefault(colid)
 
+  # load prop
   for filepath in (x for x in (dbpath / 'properties').iterdir() if x.is_file()):
     prop[filepath.stem] = yaml.safe_load(filepath.read_text(encoding='utf-8')) or {}
 
+  # load nodeprop
   for propid in prop:
     for nodeid in prop[propid]:
       setnode(nodeid)
       nodeprop.setdefault(nodeid, {}).setdefault(propid, prop[propid][nodeid])
 
+  # load rel
   for filepath in (x for x in (dbpath / 'relationships').iterdir() if x.is_file()):
     rel[filepath.stem] = yaml.safe_load(filepath.read_text(encoding='utf-8')) or {}
 
+  # load noderel, backrel, nodebackrel based on rel
   for relid in rel:
     for sourceid in rel[relid]:
       setnode(sourceid)
@@ -77,6 +91,9 @@ def load(dirpath):
         noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, rel[relid][sourceid][targetid])
         backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
         nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
+
+  # load colprop
+  colprop.update(yaml.safe_load(colproppath().read_text(encoding='utf-8')) or {})
 
 
 def savenode():
@@ -251,6 +268,12 @@ def renamecol(colid, newcolid):
 
   savecol(newcolid)
   colpath(colid).unlink()
+
+  # rename colid in colprop
+  if colid in colprop:
+    colprop[newcolid] = colprop[colid]
+    del colprop[colid]
+    savecolprop()
 
 
 def saveprop(propid):
@@ -493,6 +516,29 @@ def renamerel(relid, newrelid):
 
   saverel(newrelid)
   relpath(relid).unlink()
+
+
+def savecolprop():
+
+  with colproppath().open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(colprop, fp, default_flow_style=False)
+
+
+def setcolprop(colid, propid, proptype):
+
+  # accept even if colid not yet exist, the colid might be created later
+
+  colprop.setdefault(colid, {})[propid] = proptype
+
+  savecolprop()
+
+
+def remcolprop(colid, propid):
+
+  if colid in colprop and propid in colprop[colid]:
+    del colprop[colid][propid]
+
+  savecolprop()
 
 
 def quickset(arg=None):
