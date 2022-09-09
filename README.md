@@ -68,7 +68,7 @@ To add/update, call functions that begin with `set` like `setnode`, `setnodecol`
 
 To remove, call functions that begin with `rem` like `remnode`, `remnodecol`, `remnodeprop` etc.
 
-To rename, call functions like begin with `rename` `renamenode`, `renameprop`, `renamerel` etc.
+To rename, call functions that begin with `rename` like `renamenode`, `renameprop`, `renamerel` etc.
 
 These functions will update the files immediately and keep the dict objects consistent.
 
