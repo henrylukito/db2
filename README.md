@@ -5,12 +5,12 @@ Python module to help manage a folder of YAML files as a (graph) database. The d
 
 ## How to create new database
 
-Call `load(dbname)`. A folder named `dbname` will be created on current working directory if not already created, together with some starting subfolders and files. The database will also be 'loaded' (below).
+Call `load(dbname)`. A folder named `dbname` will be created on current working directory if not already created, together with some starting subdirectories and files. The database will also be loaded (see below).
 
 
 ## How to load dict objects from YAML files
 
-Also call `load(dbname)`. This module's dict objects such as `node`, `col`, `prop`, `rel` etc will be populated according to data in files.
+Call `load(dbname)`. This module's dict objects such as `node`, `col`, `prop`, `rel` etc will be populated according to data in files.
 
 
 ## How to save dict objects to YAML files
@@ -20,34 +20,36 @@ After you load the database, any call to provided functions such as `setnode`, `
 
 ## What is col?
 
-It stands for collection. A collection is just a way to have a subset list of nodes. A node can exist in multiple collections.
+It stands for collection. A collection is just a way to have a subset list of nodes. Same node can exist in multiple collections.
 
 
-## I see something like `col` and `nodecol` dict. What is the difference?
+## I see something like `col` and `nodecol`. What is the difference?
 
 The keys for `col` dict are col ids, while the keys for `nodecol` are node ids.
 
 You use `col` dict to find out all nodes in a collection and `nodecol` dict to find out all collections a node is in.
 
-The same applies to other dicts like `prop` and `nodeprop`, `rel` and `noderel` etc.
+This pattern applies to other dicts like `prop` and `nodeprop`, `rel` and `noderel` etc.
 
 
 ## How to edit nodes/collections/properties/relationships?
 
 To add, call functions like `setnode`, `setnodecol`, `setnodeprop`, `setnoderel` etc.
 
-To remove, the counterparts are `remnode`, `remnodecol`, `remnodeprop`, `remnoderel` etc.
+To remove, call functions like `remnode`, `remnodecol`, `remnodeprop`, `remnoderel` etc.
 
-These functions will update the files immediately. They also ensure the dict objects remain consistent, e.g., between `col` and `nodecol`.
+To rename, call functions like `renamenode`, `renameprop`, `renamerel` etc.
 
-These functions will automatically add nodes, properties and others if they don't already exist, instead of being strict by throwing errors.
+These functions will update the files immediately. They also ensure the dict objects remain consistent, e.g., if `col` is updated, `nodecol` is also updated.
+
+These functions will automatically add nodes, properties and others if they don't already exist, instead of throwing errors.
 
 These functions will automatically remove collections, properties, relationships when they become empty (have no node) and will also delete their YAML files.
 
 
 ## Quicker way to add nodes/properties/relationships
 
-There is a function `quickset` that will keep looping for user input until it's keyboard interrupted (ctrl+c).
+There is a function `quickset` that, if you pass no argument, will keep looping for user input until it's keyboard interrupted (ctrl+c).
 
 The input has certain syntax:
 
@@ -130,6 +132,13 @@ Note if slime drops potion and jelly at different probabilites, it has to be spe
 `slime>drops.probability=0.2>jelly`
 
 The syntax for adding property to relationship is admittedly more annoying than others.
+
+
+# How to ensure nodes have certain properties/relationships?
+
+You can specify what properties a node under a certain collection should have with `setcolprop`. Object is `colprop` and YAML file is `collectionproperties.yml`.
+
+By calling `fillcolprop`, the function will search for nodes under the collection that do not have the property yet, and ask for property value.
 
 
 ## How to use these objects once they're loaded?
