@@ -15,7 +15,7 @@ Call `load('path-to-db-folder')`. This module's dictionary objects such as `node
 
 ## How to save dict objects to YAML files
 
-After you load the database, any call to provided functions such as `setnode`, `setnodeprop`, `remnode` etc will save the changes to YAML files.
+After you load the database, call to edititing functions such as `setnode`, `remcol`, `renameprop` etc will save the changes back to YAML files.
 
 
 ## What is col?
@@ -27,7 +27,7 @@ It stands for collection. A collection is just a way to have a subset list of no
 
 The keys for `col` dict are col ids, while the keys for `nodecol` are node ids.
 
-You use `col` dict to find out all nodes in a collection and `nodecol` dict to find out all collections a node is in.
+You use `col` dict to find out all nodes in a collection while `nodecol` dict is to find out all collections a node is in.
 
 This pattern applies to other pairs of dicts like `prop` and `nodeprop`, `rel` and `noderel` etc.
 
@@ -42,9 +42,9 @@ To rename, call functions like begin with `rename` `renamenode`, `renameprop`, `
 
 These functions will update the files immediately and keep the dict objects consistent.
 
-The `set` functions will generally add nodes, collections, properties etc if they don't already exist, instead of throwing errors.
+The `set` functions will generally add elements (e.g., node, col, prop) if they don't already exist, instead of throwing errors.
 
-The `rem` functions will generally remove collections, properties, relationships etc that have become empty and will also delete their YAML files.
+The `rem` functions will generally remove elements that have become empty (i.e., not associated to any node) (e.g., col, prop, and rel) and will also delete their YAML files.
 
 
 ## Quicker way to add nodes/properties/relationships
@@ -53,7 +53,7 @@ There is a function `quickset` that, if you pass no argument, will keep looping 
 
 The function will do something based on each user input statement.
 
-The statement has certain syntax:
+The statement should follow certain syntax:
 
 Add a node:
 
@@ -75,11 +75,13 @@ Add property to node:
 
 `slime.health=100`
 
+Again if the property doesn't yet exist, it will be created.
+
 Add multiple properties:
 
 `slime.health=100,element='water'`
 
-Note the property values are `eval`ed, that's why string values need quotes.
+Note the property values are `eval`ed, that's why string values need to be quoted.
 
 You can combine adding collections and properties:
 
@@ -111,9 +113,9 @@ In fact you can also specify multiple sources like this:
 
 `slime;goblin>drops.probability=0.5>potion;jelly`
 
-It means both these monsters drop the same set of items and both at same probability for both items
+But this means both these monsters drop the same set of items and at same probability for both items
 
-Even though complex statements are possible, e.g.:
+Even though complex statements are technically possible, e.g.:
 
 `slime:monster.health=100.elem='water'>drops>potion:item:healingitem.sellprice=50;jelly:item:material:food.sellprice=100,hungerfill=0.1`
 
@@ -138,18 +140,20 @@ Even though complex statements are possible, e.g.:
 
 # How to ensure nodes/relationships have certain properties?
 
-You can specify what properties a node under a certain collection should have with `setcolprop`. Object is `colprop` and YAML file is `collectionproperties.yml`.
+You can specify what properties a node under a certain collection should have with `setcolprop`. Dictionary object is `colprop` and YAML file is `collectionproperties.yml`.
 
-By calling `fillcolprop`, the function will search for nodes under the collection that do not have the property yet, and prompt user for property value.
+By calling `fillcolprop`, the function will search for nodes under the collection that do not yet have that property, and prompt user for the property value, which will then be saved.
 
-Equivalent for relationship is `relprop`. By calling `fillrelprop`, it will search all relationship instances, and prompt user for property value.
+Equivalent for relationship is `relprop`. By calling `fillrelprop`, it will search all relationship instances (i.e., between different source node and target node) that do not yet have the property, and prompt user for the property value.
 
 
 ## How to use these objects once they're loaded?
 
-Aside from editing nodes/properties/relationships etc, and ensure the files and the dicts are consistent, currently the script doesn't help much when it comes to querying the objects.
+Aside from editing and ensuring the files and dict objects are consistent, the module currently doesn't do much when it comes to querying/data analysis.
 
-You can use Python features like list constructor, in operator, list comprehension and dict comprehension etc on the dict objects to query like a database.
+You can use various Python features to query the dict objects like a database.
+
+### Examples:
 
 `list(node) # list all nodes`
 
