@@ -456,11 +456,12 @@ def renamerelprop(relid, propid, newpropid):
 
       if propid in rel[relid][sourceid][targetid]:
 
-        # if some relationships already use new prop id
-        # we assume they are already correct; we're just updating relationships that still use old prop id
-
         if newpropid not in rel[relid][sourceid][targetid]:
           rel[relid][sourceid][targetid][newpropid] = rel[relid][sourceid][targetid][propid]
+
+        # if some relationships already use new prop id
+        # we assume they are already correct; we're just updating relationships that still use old prop id
+        # so if new prop id exists, we just delete old prop id
 
         del rel[relid][sourceid][targetid][propid]
 
