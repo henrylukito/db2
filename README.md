@@ -155,14 +155,54 @@ You can use various Python features to query the dict objects like a database.
 
 ### Examples:
 
-`list(node) # list all nodes`
+List all nodes:
 
-`list(col['monster']) # list all monsters (all nodes in monster collection)`
+`list(node)`
 
-`'slime' in col['monster'] # check if there's slime in monster collection`
+List all collections:
 
-`[nodeid for nodeid in node if nodeid in col['monster'] and nodeid in col['pet']] # list all nodes that exist in both monster and pet collection`
+`list(col)`
 
-`{nodeid : nodeprop[nodeid]['health'] for nodeid in col['monster'] and 'health' in nodeprop[nodeid]} # list all monster health values (if it has health property)`
+List all nodes in monster collection:
 
-`{nodeid : [item for item in noderel[nodeid]['drops'] if item in col['material]] for nodeid in col['monster'] and 'drops' in noderel[nodeid]} # list all monster drops that are material items (i.e., not healing or other items)`
+`list(col['monster'])`
+
+Count number of nodes in monster collection:
+
+`len(col['monster'])`
+
+List all collections slime is in:
+
+`list(nodecol['slime'])`
+
+Check if there's a node called slime:
+
+`'slime' in node`
+
+Check if slime is in monster collection:
+
+`'slime' in col['monster']`
+
+Display all slime properties:
+
+`nodeprop['slime']`
+
+List all water element monsters:
+
+`[monster for monter in col['monster'] if nodeprop[monster].get('elem') == 'water']`
+
+List all monsters that are also in pet collection (2 collections):
+
+`[monster for monster in col['monster'] if 'pet' in nodecol.get(monster, {})]`
+
+List all nodes that are in 3 or more certain collections:
+
+`[nodeid for nodeid in node if {'monster', 'pet', 'npc'}.issubset(nodecol.get(node, {}))]`
+
+Display all monster health if they have health property:
+
+`{nodeid : nodeprop[nodeid]['health'] for nodeid in col['monster'] if 'health' in nodeprop.get(nodeid, {})}`
+
+Display all monster that do not have health property yet:
+
+`[nodeid for nodeid in col['monster'] if 'health' not in nodeprop.get(nodeid, {})]`
