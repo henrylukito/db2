@@ -9,15 +9,17 @@ dbpath = None
 node = {} # node[nodeid] = None
 col = {} # col[colid][nodeid] = None
 prop = {} # prop[propid][nodeid] = propvalue
-rel = {} # rel[relid][sourceid][targetid] = relpropdict
-backrel = {} # backrel[relid][targetid][sourceid] = relpropdict
 
 nodecol = {} # nodecol[nodeid][colid] = None
 nodeprop = {} # nodeprop[nodeid][propid] = propvalue
+
+rel = {} # rel[relid][sourceid][targetid] = relpropdict
+backrel = {} # backrel[relid][targetid][sourceid] = relpropdict
 noderel = {} # noderel[sourceid][relid][targetid] = relpropdict
 nodebackrel = {} # nodebackrel[targetid][relid][sourceid] = relpropdict
+nodetarget = {} # nodetarget[sourceid][targetid][relid] = relpropdict
+nodesource = {} # nodesource[targetid][sourceid][relid] # relpropdict
 
-# rel, backrel, noderel, noderbackrel references the same relpropdict
 # relpropdict[relpropid] = relpropvalue
 
 colprop = {} # colprop[colid][propid] = typestr
@@ -37,13 +39,17 @@ def load(dirpath):
   node.clear()
   col.clear()
   prop.clear()
-  rel.clear()
-  backrel.clear()
+
 
   nodecol.clear()
   nodeprop.clear()
+
+  rel.clear()
+  backrel.clear()
   noderel.clear()
   nodebackrel.clear()
+  nodetarget.clear()
+  nodesource.clear()
 
   colprop.clear()
   relprop.clear()
@@ -92,9 +98,14 @@ def load(dirpath):
       setnode(sourceid)
       for targetid in rel[relid][sourceid]:
         setnode(targetid)
-        noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, rel[relid][sourceid][targetid])
-        backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
-        nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
+
+        relpropdict = rel[relid][sourceid][targetid]
+
+        backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, relpropdict)
+        noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, relpropdict)
+        nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, relpropdict)
+        nodetarget.setdefault(sourceid, {}).setdefault(targetid, {}).setdefault(relid, relpropdict)
+        nodesource.setdefault(targetid, {}).setdefault(sourceid, {}).setdefault(relid, relpropdict)
 
   # load colprop
   colprop.update(yaml.safe_load(colproppath().read_text(encoding='utf-8')) or {})
@@ -203,6 +214,12 @@ def renamenode(nodeid, newnodeid):
 
     nodebackrel[newnodeid] = nodebackrel[nodeid]
     del nodebackrel[nodeid]
+
+  if nodeid in nodetarget:
+    del nodetarget[nodeid]
+
+  if nodeid in nodesource:
+    del nodesource[nodeid]
 
   savenode()
 
@@ -385,15 +402,16 @@ def setnoderel(sourceid, relid, targetid, propid=None, propvalue=None):
       return
 
   rel.setdefault(relid, {}).setdefault(sourceid, {}).setdefault(targetid, {})
+  relpropdict = rel[relid][sourceid][targetid]
 
   if propid is not None:
-    rel[relid][sourceid][targetid][propid] = propvalue
+    relpropdict[propid] = propvalue
 
-  noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, rel[relid][sourceid][targetid])
-
-  backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
-
-  nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, rel[relid][sourceid][targetid])
+  backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, relpropdict)
+  noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, relpropdict)
+  nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, relpropdict)
+  nodetarget.setdefault(sourceid, {}).setdefault(targetid, {}).setdefault(relid, relpropdict)
+  nodesource.setdefault(targetid, {}).setdefault(sourceid, {}).setdefault(relid, relpropdict)
 
   saverel(relid)
 
@@ -446,23 +464,35 @@ def remnodereltarget(sourceid, relid, targetid):
   if not rel[relid]: # if no more source in relationship
     del rel[relid]
 
-  del noderel[sourceid][relid][targetid]
-  if not noderel[sourceid][relid]:
-    del noderel[sourceid][relid]
-  if not noderel[sourceid]:
-    del noderel[sourceid]
-
   del backrel[relid][targetid][sourceid]
   if not backrel[relid][targetid]:
     del backrel[relid][targetid]
   if not backrel[relid]:
     del backrel[relid]
 
+  del noderel[sourceid][relid][targetid]
+  if not noderel[sourceid][relid]:
+    del noderel[sourceid][relid]
+  if not noderel[sourceid]:
+    del noderel[sourceid]
+
   del nodebackrel[targetid][relid][sourceid]
   if not nodebackrel[targetid][relid]:
     del nodebackrel[targetid][relid]
   if not nodebackrel[targetid]:
     del nodebackrel[targetid]
+
+  del nodetarget[sourceid][targetid][relid]
+  if not nodetarget[sourceid][targetid]:
+    del nodetarget[sourceid][targetid]
+  if not nodetarget[sourceid]:
+    del nodetarget[sourceid]
+
+  del nodesource[targetid][sourceid][relid]
+  if not nodesource[targetid][sourceid]:
+    del nodesource[targetid][sourceid]
+  if not nodesource[targetid]:
+    del nodesource[targetid]
 
   if relid not in rel: # we deleted the relationship above
     relpath(relid).unlink()
@@ -526,10 +556,16 @@ def renamerel(relid, newrelid):
     raise Exception("There's already rel with that id")
 
   for sourceid in rel[relid]:
-
     for targetid in rel[relid][sourceid]:
+
       nodebackrel[targetid][newrelid] = nodebackrel[targetid][relid]
       del nodebackrel[targetid][relid]
+
+      nodetarget[sourceid][targetid][newrelid] = nodetarget[sourceid][targetid][relid]
+      del nodetarget[sourceid][targetid][relid]
+
+      nodesource[targetid][sourceid][newrelid] = nodesource[targetid][sourceid][relid]
+      del nodesource[targetid][sourceid][relid]
 
     noderel[sourceid][newrelid] = noderel[sourceid][relid]
     del noderel[sourceid][relid]
