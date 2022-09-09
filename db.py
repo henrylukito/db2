@@ -137,6 +137,9 @@ def remnode(nodeid):
 
 def renamenode(nodeid, newnodeid):
 
+  if nodeid == newnodeid:
+    return
+
   if nodeid not in node:
     return
 
@@ -253,6 +256,9 @@ def remcol(colid):
 
 def renamecol(colid, newcolid):
 
+  if colid == newcolid:
+    return
+
   if colid not in col:
     return
 
@@ -331,6 +337,9 @@ def remprop(propid):
 
 
 def renameprop(propid, newpropid):
+
+  if propid == newpropid:
+    return
 
   if propid not in prop:
     return
@@ -471,6 +480,9 @@ def remrel(relid):
 
 def renamerelprop(relid, propid, newpropid):
 
+  if propid == newpropid:
+    return
+
   if relid not in rel:
     return
 
@@ -492,6 +504,9 @@ def renamerelprop(relid, propid, newpropid):
 
 
 def renamerel(relid, newrelid):
+
+  if relid == newrelid:
+    return
 
   if relid not in rel:
     return
