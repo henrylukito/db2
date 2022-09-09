@@ -147,7 +147,7 @@ But this means both these monsters drop the same set of items and at same probab
 
 Even though complex statements are technically possible, e.g.:
 
-`slime:monster.health=100.elem='water'>drops>potion:item:healingitem.sellprice=50;jelly:item:material:food.sellprice=100,stomach=0.1`
+`slime:monster.health=100,elem='water'>drops>potion:item:healingitem.sellprice=50;jelly:item:material:food.sellprice=100,stomach=0.1`
 
 `quickset` is meant for iterating quickly with shorter statements like this:
 
