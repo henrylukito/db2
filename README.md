@@ -32,6 +32,36 @@ You use `col` dict to find out all nodes in a collection while `nodecol` dict is
 This pattern applies to other pairs of dicts like `prop` and `nodeprop`, `rel` and `noderel` etc.
 
 
+## What is the difference between `rel`, `backrel`, `noderel`, `nodebackrel`, `nodetarget`, `nodesource`?
+
+For a particular relationship instance between a source node and a target node, there is a property dict for that relationship instance.
+
+The same relationship property dict can be accessed via 6 different dicts.
+
+How the 6 dicts differ is the keys required to get to access property dict:
+
+rel : `rel[relid][sourceid][targetid]`
+
+backrel: `backrel[relid][targetid][sourceid]`
+
+noderel: `noderel[sourceid][relid][targetid]`
+
+nodebackrel: `nodebackrel[targetid][relid][sourceid]`
+
+nodetarget: `nodetarget[sourceid][targetid][relid]`
+
+nodesource: `nodesource[targetid][sourceid][relid]`
+
+Only `rel` is saved to YAML file. The rest are derived from `rel`.
+
+`rel[relid]` and `backrel[relid]` can be used to list all the sources and targets of a relationship respectively.
+
+To list all relationships a node has, `noderel[sourceid]`
+
+To list all relationships a node is 'backlinked to'/'a target of', `nodebackrel[targetid]`
+
+If you want to know all the nodes a node links to (without caring which relationship), `nodetarget[sourceid]`. Then `nodetarget[sourceid][targetid]` lists all the relationships which link the 2 nodes (they might be linked by more than 1 relationship).
+
 ## How to edit nodes/collections/properties/relationships?
 
 To add/update, call functions that begin with `set` like `setnode`, `setnodecol`, `setnodeprop` etc.
@@ -151,7 +181,7 @@ Equivalent for relationship is `relprop`. By calling `fillrelprop`, it will sear
 
 Aside from editing and ensuring the files and dict objects are consistent, the module currently doesn't do much when it comes to querying/data analysis.
 
-You can use various Python features to query the dict objects like a database.
+To start with, you can use various Python features to query the dict objects like a database.
 
 ### Examples:
 
