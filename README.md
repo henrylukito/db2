@@ -242,3 +242,9 @@ Display all monster health if they have health property:
 Display all monster that do not have health property yet:
 
 `[nodeid for nodeid in col['monster'] if 'health' not in nodeprop.get(nodeid, {})]`
+
+## How to decide whether to use collection, property or relationship?
+
+Collection is more binary than a boolean property; a node is either in collection or not. In contrast, with boolean property there exists 3 possibilites with a node: Either the node has the property and its value is either true or false, or the node doesn't have the property.
+
+With relationship it's easier to look at the other side. For example, monsters drops items. If we want to know all the monsters that drop a specific item, it's easier to do with `backrel` which has been precomputed.
