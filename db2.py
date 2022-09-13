@@ -113,7 +113,7 @@ def isnodeempty(nodeid):
 def setnode(nodeid):
 
 # create node if not already exist
-# if we create node, since it's empty node, it's also put in nodeempty
+# if we create node, since it's empty node, also put in nodeempty
 
   if not nodeid:
     return
@@ -123,10 +123,10 @@ def setnode(nodeid):
   if nodeid in node:
     return
 
-  node.setdefault(nodeid)
-
   nodeempty.setdefault(nodeid)
   _savenodeempty()
+
+  node.setdefault(nodeid)
 
 ###############################################################################
 
@@ -222,13 +222,13 @@ def setnodecol(nodeid, colid):
   col.setdefault(colid, {}).setdefault(nodeid)
   nodecol.setdefault(nodeid, {}).setdefault(colid)
 
-  _savecol(colid)
-
   # because node is now in collection, it it was empty node before
   # it should now be removed from nodeempty
   if nodeid in nodeempty:
     del nodeempty[nodeid]
     _savenodeempty()
+
+  _savecol(colid)
 
 ###############################################################################
 
@@ -253,12 +253,6 @@ def remnodecol(nodeid, colid):
   del col[colid][nodeid]
   del nodecol[nodeid][colid]
 
-  # if collection is now empty, should delete file. Else, save file
-  if not col[colid]:
-    _delcol(colid)
-  else:
-    _savecol(colid)
-
   if not nodecol[nodeid]:
     del nodecol[nodeid]
 
@@ -267,6 +261,12 @@ def remnodecol(nodeid, colid):
     if isnodeempty(nodeid):
       nodeempty.setdefault(nodeid)
       _savenodeempty()
+
+  # if collection is now empty, should delete file. Else, save file
+  if not col[colid]:
+    _delcol(colid)
+  else:
+    _savecol(colid)
 
 ###############################################################################
 
@@ -291,10 +291,10 @@ def remcol(colid):
         nodeempty.setdefault(nodeid)
         nodeemptyhaschange = True
 
-  del col[colid]
-  _delcol(colid)
-
   if nodeemptyhaschange:
     _savenodeempty()
+
+  del col[colid]
+  _delcol(colid)
 
 ###############################################################################
