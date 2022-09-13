@@ -406,6 +406,9 @@ def remcol(colid):
 
 def renamecol(oldcolid, newcolid):
 
+  if oldcolid == newcolid:
+    return
+
   if not oldcolid or not newcolid:
     return
 
@@ -517,6 +520,9 @@ def remprop(propid):
 ###############################################################################
 
 def renameprop(oldpropid, newpropid):
+
+  if oldpropid == newpropid:
+    return
 
   if not oldpropid or not newpropid:
     return
@@ -713,5 +719,82 @@ def remrel(relid):
 
   for sourceid in list(rel[relid]):
     remnoderel(sourceid, relid)
+
+###############################################################################
+
+def renamenoderelprop(sourceid, relid, targetid, propid, newpropid):
+
+  if propid == newpropid:
+    return
+
+  if not sourceid or not relid or not targetid or not propid or not newpropid:
+    return
+
+  _loadifnotloaded()
+
+  if sourceid not in node or relid not in rel or targetid not in node:
+    return
+
+  if sourceid not in rel[relid]:
+    return
+
+  if targetid not in rel[relid][sourceid]:
+    return
+
+  if propid not in rel[relid][sourceid][targetid]:
+    return
+
+  if newpropid not in rel[relid][sourceid][targetid]:
+    rel[relid][sourceid][targetid][newpropid] = rel[relid][sourceid][targetid][propid]
+
+  del rel[relid][sourceid][targetid][propid]
+
+  _saverel(relid)
+
+###############################################################################
+
+def renamerel(oldrelid, newrelid):
+
+  if oldrelid == newrelid:
+    return
+
+  if not oldrelid or not newrelid:
+    return
+
+  _loadifnotloaded()
+
+  if oldrelid not in rel:
+    return
+
+  rel.setdefault(newrelid, {})
+
+  for sourceid in rel[oldrelid]:
+    rel[newrelid].setdefault(sourceid, {})
+
+    for targetid in rel[oldrelid][sourceid]:
+      rel[newrelid][sourceid].setdefault(targetid, {})
+
+      rel[oldrelid][sourceid][targetid].update(rel[newrelid][sourceid][targetid])
+
+      nodebackrel[targetid].setdefault(newrelid, {}).update(nodebackrel[targetid][oldrelid])
+      del nodebackrel[targetid][oldrelid]
+
+      nodereltarget[sourceid][targetid].setdefault(newrelid, {}).update(nodereltarget[sourceid][targetid][oldrelid])
+      del nodereltarget[sourceid][targetid][oldrelid]
+
+      noderelsource[targetid][sourceid].setdefault(newrelid, {}).update(noderelsource[targetid][sourceid][oldrelid])
+      del noderelsource[targetid][sourceid][oldrelid]
+
+    noderel[sourceid].setdefault(newrelid, {}).update(noderel[sourceid][oldrelid])
+    del noderel[sourceid][oldrelid]
+
+  rel.setdefault(newrelid, {}).update(rel[oldrelid])
+  del rel[oldrelid]
+
+  backrel.setdefault(newrelid, {}).update(backrel[oldrelid])
+  del backrel[oldrelid]
+
+  _delrel(oldrelid)
+  _saverel(newrelid)
 
 ###############################################################################
