@@ -7,10 +7,16 @@ is_loaded = False
 node = {}
 col = {}
 prop = {}
+rel = {}
+backrel = {}
 
 nodeempty = {}
 nodecol = {}
 nodeprop = {}
+noderel = {}
+nodebackrel = {}
+nodereltarget = {}
+noderelsource = {}
 
 ###############################################################################
 
@@ -21,10 +27,16 @@ def reset():
   node.clear()
   col.clear()
   prop.clear()
+  rel.clear()
+  backrel.clear()
 
   nodeempty.clear()
   nodecol.clear()
   nodeprop.clear()
+  noderel.clear()
+  nodebackrel.clear()
+  nodereltarget.clear()
+  noderelsource.clear()
 
 ###############################################################################
 
@@ -38,6 +50,7 @@ def load(dirpath=None):
   
   (dbpath / 'collections').mkdir(parents=True, exist_ok=True)
   (dbpath / 'properties').mkdir(parents=True, exist_ok=True)
+  (dbpath / 'relationships').mkdir(parents=True, exist_ok=True)
   (dbpath / 'emptynodes.yml').touch(exist_ok=True)
 
   for filepath in (filepath for filepath in (dbpath/'collections').iterdir() if filepath.is_file() and filepath.suffix == '.yml'):
@@ -55,6 +68,23 @@ def load(dirpath=None):
     for nodeid in prop[propid]:
       node.setdefault(nodeid)
       nodeprop.setdefault(nodeid, {})[propid] = prop[propid][nodeid]
+
+  for filepath in (filepath for filepath in (dbpath/'relationships').iterdir() if filepath.is_file() and filepath.suffix == '.yml'):
+    rel[filepath.stem] = yaml.safe_load(filepath.read_text(encoding='utf-8')) or {}
+
+  for relid in rel:
+    for sourceid in rel[relid]:
+      node.setdefault(sourceid)
+      for targetid in rel[relid][sourceid]:
+        node.setdefault(targetid)
+
+        relpropdict = rel[relid][sourceid][targetid]
+
+        backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, relpropdict)
+        noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, relpropdict)
+        nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, relpropdict)
+        nodereltarget.setdefault(sourceid, {}).setdefault(targetid, {}).setdefault(relid, relpropdict)
+        noderelsource.setdefault(targetid, {}).setdefault(sourceid, {}).setdefault(relid, relpropdict)
 
   nodeempty.update(dict.fromkeys(yaml.safe_load((dbpath / 'emptynodes.yml').read_text(encoding='utf-8')) or []))
 
@@ -113,6 +143,19 @@ def _delprop(propid):
 
 ###############################################################################
 
+def _saverel(relid):
+
+  with (dbpath / 'relationships' / (relid + '.yml')).open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(rel[relid], fp, default_flow_style=False)
+
+###############################################################################
+
+def _delrel(relid):
+
+  (dbpath / 'relationships' / (relid + '.yml')).unlink()
+
+###############################################################################
+
 def isnodeempty(nodeid):
 
 # check whether node is empty, not whether it's in nodeempty
@@ -129,6 +172,12 @@ def isnodeempty(nodeid):
     return False
 
   if nodeid in nodeprop:
+    return False
+
+  if nodeid in noderel:
+    return False
+
+  if nodeid in nodebackrel:
     return False
 
   return True
@@ -176,6 +225,15 @@ def remnode(nodeid):
   if nodeid in nodeprop:
     for propid in list(nodeprop[nodeid]):
       remnodeprop(nodeid, propid)
+
+  if nodeid in nodebackrel:
+    for relid in list(nodebackrel[nodeid]):
+      for sourceid in nodebackrel[nodeid][relid]:
+        remnodereltarget(sourceid, relid, nodeid)
+
+  if nodeid in noderel:
+    for relid in list(noderel[nodeid]):
+      remnoderel(nodeid, relid)
 
   if nodeid in nodeempty:
     del nodeempty[nodeid]
@@ -480,5 +538,180 @@ def renameprop(oldpropid, newpropid):
 
   _delprop(oldpropid)
   _saveprop(newpropid)
+
+###############################################################################
+
+def setnoderel(sourceid, relid, targetid, propid=None, propvalue=None):
+
+  if not sourceid or not relid or not targetid:
+    return
+
+  _loadifnotloaded()
+
+  node.setdefault(sourceid)
+  node.setdefault(targetid)
+
+  if relid in rel and sourceid in rel[relid] and targetid in rel[relid][sourceid]:
+    if propid is None:
+      return
+    if propid is not None and propid in rel[relid][sourceid][targetid] and rel[relid][sourceid][targetid][propid] == propvalue: # if specify property but property exist and has same value
+      return
+
+  rel.setdefault(relid, {}).setdefault(sourceid, {}).setdefault(targetid, {})
+  relpropdict = rel[relid][sourceid][targetid]
+
+  if propid is not None:
+    relpropdict[propid] = propvalue
+
+  backrel.setdefault(relid, {}).setdefault(targetid, {}).setdefault(sourceid, relpropdict)
+  noderel.setdefault(sourceid, {}).setdefault(relid, {}).setdefault(targetid, relpropdict)
+  nodebackrel.setdefault(targetid, {}).setdefault(relid, {}).setdefault(sourceid, relpropdict)
+  nodereltarget.setdefault(sourceid, {}).setdefault(targetid, {}).setdefault(relid, relpropdict)
+  noderelsource.setdefault(targetid, {}).setdefault(sourceid, {}).setdefault(relid, relpropdict)
+
+  nodeemptyhaschange = False
+
+  if sourceid in nodeempty:
+    del nodeempty[sourceid]
+    nodeemptyhaschange = True
+
+  if targetid in nodeempty:
+    del nodeempty[targetid]
+    nodeemptyhaschange = True
+
+  if nodeemptyhaschange:
+    _savenodeempty()
+
+  _saverel(relid)
+
+###############################################################################
+
+def remnoderelprop(sourceid, relid, targetid, propid):
+
+  if not sourceid or not relid or not targetid or not propid:
+    return
+
+  _loadifnotloaded()
+
+  if sourceid not in node or relid not in rel or targetid not in node:
+    return
+
+  if sourceid not in rel[relid]:
+    return
+
+  if targetid not in rel[relid][sourceid]:
+    return
+
+  if propid not in rel[relid][sourceid][targetid]:
+    return
+
+  del rel[relid][sourceid][targetid][propid] # no need to do backrel, noderel, nodebackrel since they refer to same dict object
+
+  _saverel(relid)
+
+###############################################################################
+
+def remnodereltarget(sourceid, relid, targetid):
+
+  if not sourceid or not relid or not targetid:
+    return
+
+  _loadifnotloaded()
+
+  if sourceid not in node or relid not in rel or targetid not in node:
+    return
+
+  if sourceid not in rel[relid]:
+    return
+
+  if targetid not in rel[relid][sourceid]:
+    return
+
+  del rel[relid][sourceid][targetid]
+  if not rel[relid][sourceid]: # if a source's relationship no longer has target
+    del rel[relid][sourceid]
+  if not rel[relid]: # if no more source in relationship
+    del rel[relid]
+
+  del backrel[relid][targetid][sourceid]
+  if not backrel[relid][targetid]:
+    del backrel[relid][targetid]
+  if not backrel[relid]:
+    del backrel[relid]
+
+  del noderel[sourceid][relid][targetid]
+  if not noderel[sourceid][relid]:
+    del noderel[sourceid][relid]
+  if not noderel[sourceid]:
+    del noderel[sourceid]
+
+  del nodebackrel[targetid][relid][sourceid]
+  if not nodebackrel[targetid][relid]:
+    del nodebackrel[targetid][relid]
+  if not nodebackrel[targetid]:
+    del nodebackrel[targetid]
+
+  del nodereltarget[sourceid][targetid][relid]
+  if not nodereltarget[sourceid][targetid]:
+    del nodereltarget[sourceid][targetid]
+  if not nodereltarget[sourceid]:
+    del nodereltarget[sourceid]
+
+  del noderelsource[targetid][sourceid][relid]
+  if not noderelsource[targetid][sourceid]:
+    del noderelsource[targetid][sourceid]
+  if not noderelsource[targetid]:
+    del noderelsource[targetid]
+
+  nodeemptyhaschange = False
+
+  if isnodeempty(sourceid):
+    nodeempty.setdefault(sourceid)
+    nodeemptyhaschange = True
+
+  if isnodeempty(targetid):
+    nodeempty.setdefault(targetid)
+    nodeemptyhaschange = True
+
+  if nodeemptyhaschange:
+    _savenodeempty() 
+
+  if relid not in rel: # we deleted the relationship above
+    _delrel(relid)
+  else:
+    _saverel(relid)
+
+###############################################################################
+
+def remnoderel(sourceid, relid):
+
+  if not sourceid or not relid:
+    return
+
+  _loadifnotloaded()
+
+  if sourceid not in node or relid not in rel:
+    return
+
+  if sourceid not in rel[relid]:
+    return
+
+  for targetid in list(rel[relid][sourceid]):
+    remnodereltarget(sourceid, relid, targetid)
+
+###############################################################################
+
+def remrel(relid):
+
+  if not relid:
+    return
+
+  _loadifnotloaded()
+
+  if relid not in rel:
+    return
+
+  for sourceid in list(rel[relid]):
+    remnoderel(sourceid, relid)
 
 ###############################################################################
