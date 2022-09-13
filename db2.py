@@ -13,10 +13,7 @@ nodecol = {}
 ###############################################################################
 
 def reset():
-  global dbpath
   global is_loaded
-
-  dbpath = Path()
   is_loaded = False
 
   node.clear()
@@ -31,9 +28,8 @@ def load(dirpath=None):
 
   reset()
 
-  global dbpath
-
   if dirpath:
+    global dbpath
     dbpath = Path(dirpath)
   
   (dbpath / 'collections').mkdir(parents=True, exist_ok=True)
