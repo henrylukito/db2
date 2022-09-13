@@ -1,6 +1,4 @@
-from lib2to3.pgen2.parse import ParseError
 from pathlib import Path
-from xml.dom import NotFoundErr
 import yaml
 
 
@@ -741,7 +739,7 @@ def quickset(arg=None):
     relsplit = [x.strip() for x in arg.split('>')]
 
     if len(relsplit) != 1 and len(relsplit) != 3:
-      raise ParseError
+      raise Exception('relationship must have target')
 
     lnodestrs = [x.strip() for x in relsplit[0].split(';')]
     lnodes = [parsenode(lnodestr) for lnodestr in lnodestrs]
