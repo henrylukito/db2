@@ -6,9 +6,11 @@ is_loaded = False
 
 node = {}
 col = {}
+prop = {}
 
 nodeempty = {}
 nodecol = {}
+nodeprop = {}
 
 ###############################################################################
 
@@ -18,9 +20,11 @@ def reset():
 
   node.clear()
   col.clear()
+  prop.clear()
 
   nodeempty.clear()
   nodecol.clear()
+  nodeprop.clear()
 
 ###############################################################################
 
@@ -33,6 +37,7 @@ def load(dirpath=None):
     dbpath = Path(dirpath)
   
   (dbpath / 'collections').mkdir(parents=True, exist_ok=True)
+  (dbpath / 'properties').mkdir(parents=True, exist_ok=True)
   (dbpath / 'emptynodes.yml').touch(exist_ok=True)
 
   for filepath in (filepath for filepath in (dbpath/'collections').iterdir() if filepath.is_file() and filepath.suffix == '.yml'):
@@ -41,7 +46,15 @@ def load(dirpath=None):
   for colid in col:
     for nodeid in col[colid]:
       node.setdefault(nodeid)
-      nodecol.setdefault(nodeid, {}).setdefault(colid)
+      nodecol.setdefault(nodeid, {})[colid] = None
+
+  for filepath in (filepath for filepath in (dbpath/'properties').iterdir() if filepath.is_file() and filepath.suffix == '.yml'):
+    prop[filepath.stem] = yaml.safe_load(filepath.read_text(encoding='utf-8')) or {}
+
+  for propid in prop:
+    for nodeid in prop[propid]:
+      node.setdefault(nodeid)
+      nodeprop.setdefault(nodeid, {})[propid] = prop[propid][nodeid]
 
   nodeempty.update(dict.fromkeys(yaml.safe_load((dbpath / 'emptynodes.yml').read_text(encoding='utf-8')) or []))
 
@@ -87,12 +100,25 @@ def _delcol(colid):
 
 ###############################################################################
 
+def _saveprop(propid):
+
+  with (dbpath / 'properties' / (propid + '.yml')).open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(prop[propid], fp, default_flow_style=False)
+
+###############################################################################
+
+def _delprop(propid):
+
+  (dbpath / 'properties' / (propid + '.yml')).unlink()
+
+###############################################################################
+
 def isnodeempty(nodeid):
 
 # check whether node is empty, not whether it's in nodeempty
 # but whether it's in any of nodecol, nodeprop, etc
 # this is usually called when removing node from nodecol, nodeprop etc
-# to check whether node has become empty, so it can be put to nodeempty
+# to check whether node has become empty, if so put to nodeempty
 
   if not nodeid:
     return
@@ -100,6 +126,9 @@ def isnodeempty(nodeid):
   _loadifnotloaded()
   
   if nodeid in nodecol:
+    return False
+
+  if nodeid in nodeprop:
     return False
 
   return True
@@ -129,7 +158,7 @@ def setnode(nodeid):
 def remnode(nodeid):
 
 # remove node if exist
-# since node might etc have col, need to etc clean up by calling remnodecol
+# since node might be in collection or have property, need to clean up by calling rem functions
 # node might be empty node, so need to remove it from nodeempty
 
   if not nodeid:
@@ -144,6 +173,10 @@ def remnode(nodeid):
     for colid in list(nodecol[nodeid]):
       remnodecol(nodeid, colid)
 
+  if nodeid in nodeprop:
+    for propid in list(nodeprop[nodeid]):
+      remnodeprop(nodeid, propid)
+
   if nodeid in nodeempty:
     del nodeempty[nodeid]
     _savenodeempty()
@@ -155,8 +188,8 @@ def remnode(nodeid):
 def renamenode(oldnodeid, newnodeid):
 
 # rename node if exist
-# newnodeid might be new or it might already exist
-# if already exist, we're kinda doing merge and then remove oldnodeid
+# newnodeid might be new or already exist
+# if already exist, operation is like merge and then remove old name
 
   if not oldnodeid or not newnodeid:
     return
@@ -187,6 +220,20 @@ def renamenode(oldnodeid, newnodeid):
     # above we merge and not overwrite because newnodeid might already exist and have existing col
     del nodecol[oldnodeid]
     # since newnodeid has some col, it shouldn't exist in nodeempty
+    if newnodeid in nodeempty:
+      del nodeempty[newnodeid]
+      hasnodeemptychange = True
+
+  if oldnodeid in nodeprop:
+    for propid in nodeprop[oldnodeid]:
+      # if newnodeid already exist and has property,
+      # we choose to keep newnodeid property value rather than set it with oldnodeid property value
+      if newnodeid not in prop[propid]:
+        prop[propid][newnodeid] = prop[propid][oldnodeid]
+        nodeprop.setdefault(newnodeid, {})[propid] = prop[propid][newnodeid]
+      del prop[propid][oldnodeid]
+      _saveprop(propid)
+    del nodeprop[oldnodeid]
     if newnodeid in nodeempty:
       del nodeempty[newnodeid]
       hasnodeemptychange = True
@@ -268,6 +315,8 @@ def remnodecol(nodeid, colid):
 
 def remcol(colid):
 
+# remove collection
+
   if not colid:
     return
 
@@ -278,6 +327,8 @@ def remcol(colid):
 
   nodeemptyhaschange = False
 
+  # need to clean up nodecol
+  # even put nodeid that has become empty to nodeempty
   for nodeid in col[colid]:
     del nodecol[nodeid][colid]
     if not nodecol[nodeid]:
@@ -292,5 +343,95 @@ def remcol(colid):
 
   del col[colid]
   _delcol(colid)
+
+###############################################################################
+
+def setnodeprop(nodeid, propid, propvalue):
+
+# set node property
+# node and property will be created if not exist
+
+  if not nodeid or not propid:
+    return
+
+  _loadifnotloaded()
+
+  if propid in prop and nodeid in prop[propid] and prop[propid][nodeid] == propvalue:
+    return
+
+  prop.setdefault(propid, {})[nodeid] = propvalue
+  nodeprop.setdefault(nodeid, {})[propid] = prop[propid][nodeid]
+
+  if nodeid in nodeempty:
+    del nodeempty[nodeid]
+    _savenodeempty()
+
+  _saveprop(propid)
+
+###############################################################################
+
+def remnodeprop(nodeid, propid):
+
+# remove node property if exist
+
+  if not nodeid or not propid:
+    return
+
+  _loadifnotloaded()
+
+  if nodeid not in node:
+    return
+
+  if propid not in prop:
+    return
+
+  if nodeid not in prop[propid]:
+    return
+
+  del prop[propid][nodeid]
+  del nodeprop[nodeid][propid]
+
+  if not nodeprop[nodeid]:
+    del nodeprop[nodeid]
+
+    if isnodeempty(nodeid):
+      nodeempty.setdefault(nodeid)
+      _savenodeempty()
+
+  if not prop[propid]:
+    _delprop(propid)
+  else:
+    _saveprop(propid)
+
+###############################################################################
+
+def remprop(propid):
+
+# remove property
+
+  if not propid:
+    return
+
+  _loadifnotloaded()
+
+  if propid not in prop:
+    return
+
+  nodeemptyhaschange = False
+
+  for nodeid in prop[propid]:
+    del nodeprop[nodeid][propid]
+    if not nodeprop[nodeid]:
+      del nodeprop[nodeid]
+
+      if isnodeempty(nodeid):
+        nodeempty.setdefault(nodeid)
+        nodeemptyhaschange = True
+
+  if nodeemptyhaschange:
+    _savenodeempty()
+
+  del prop[propid]
+  _delprop(propid)
 
 ###############################################################################
