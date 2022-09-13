@@ -7,12 +7,11 @@ dbpath = None
 node = {} # node[nodeid] = None
 col = {} # col[colid][nodeid] = None
 prop = {} # prop[propid][nodeid] = propvalue
+rel = {} # rel[relid][sourceid][targetid] = relpropdict
+backrel = {} # backrel[relid][targetid][sourceid] = relpropdict
 
 nodecol = {} # nodecol[nodeid][colid] = None
 nodeprop = {} # nodeprop[nodeid][propid] = propvalue
-
-rel = {} # rel[relid][sourceid][targetid] = relpropdict
-backrel = {} # backrel[relid][targetid][sourceid] = relpropdict
 noderel = {} # noderel[sourceid][relid][targetid] = relpropdict
 nodebackrel = {} # nodebackrel[targetid][relid][sourceid] = relpropdict
 nodetarget = {} # nodetarget[sourceid][targetid][relid] = relpropdict
