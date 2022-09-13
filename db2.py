@@ -346,6 +346,28 @@ def remcol(colid):
 
 ###############################################################################
 
+def renamecol(oldcolid, newcolid):
+
+  if not oldcolid or not newcolid:
+    return
+
+  _loadifnotloaded()
+
+  if oldcolid not in col:
+    return
+
+  for nodeid in col[oldcolid]:
+    nodecol[nodeid].setdefault(newcolid)
+    del nodecol[nodeid][oldcolid]
+
+  col.setdefault(newcolid, {}).update(col[oldcolid])
+  del col[oldcolid]
+
+  _delcol(oldcolid)
+  _savecol(newcolid)
+
+###############################################################################
+
 def setnodeprop(nodeid, propid, propvalue):
 
 # set node property
@@ -433,5 +455,30 @@ def remprop(propid):
 
   del prop[propid]
   _delprop(propid)
+
+###############################################################################
+
+def renameprop(oldpropid, newpropid):
+
+  if not oldpropid or not newpropid:
+    return
+
+  _loadifnotloaded()
+
+  if oldpropid not in prop:
+    return
+
+  prop.setdefault(newpropid, {})
+
+  for nodeid in prop[oldpropid]:
+    if nodeid not in prop[newpropid]:
+      prop[newpropid][nodeid] = prop[oldpropid][nodeid]
+      nodeprop.setdefault(nodeid, {})[newpropid] = prop[newpropid][nodeid]
+    del nodeprop[nodeid][oldpropid]
+
+  del prop[oldpropid]
+
+  _delprop(oldpropid)
+  _saveprop(newpropid)
 
 ###############################################################################
