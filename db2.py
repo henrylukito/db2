@@ -18,6 +18,8 @@ nodebackrel = {}
 nodereltarget = {}
 noderelsource = {}
 
+colprop = {}
+
 ###############################################################################
 
 def reset():
@@ -38,6 +40,8 @@ def reset():
   nodereltarget.clear()
   noderelsource.clear()
 
+  colprop.clear()
+
 ###############################################################################
 
 def load(dirpath=None):
@@ -52,6 +56,7 @@ def load(dirpath=None):
   (dbpath / 'properties').mkdir(parents=True, exist_ok=True)
   (dbpath / 'relationships').mkdir(parents=True, exist_ok=True)
   (dbpath / 'emptynodes.yml').touch(exist_ok=True)
+  (dbpath / 'collectionproperties.yml').touch(exist_ok=True)
 
   for filepath in (filepath for filepath in (dbpath/'collections').iterdir() if filepath.is_file() and filepath.suffix == '.yml'):
     col[filepath.stem] = dict.fromkeys(yaml.safe_load(filepath.read_text(encoding='utf-8')) or [])
@@ -99,6 +104,8 @@ def load(dirpath=None):
     _savenodeempty()
 
   node.update(nodeempty)
+
+  colprop.update(yaml.safe_load((dbpath / 'collectionproperties.yml').read_text(encoding='utf-8')) or {})
 
   global is_loaded
   is_loaded = True
@@ -153,6 +160,13 @@ def _saverel(relid):
 def _delrel(relid):
 
   (dbpath / 'relationships' / (relid + '.yml')).unlink()
+
+###############################################################################
+
+def _savecolprop():
+
+  with (dbpath / 'collectionproperties.yml').open('w', encoding='utf-8') as fp:
+    yaml.safe_dump(colprop, fp, default_flow_style=False)
 
 ###############################################################################
 
@@ -879,5 +893,91 @@ def inputnode(arg=None):
 
   else:
     raise TypeError
+
+###############################################################################
+
+def setcolprop(colid, propid, proptype=None):
+
+  if not colid or not propid:
+    return
+
+  _loadifnotloaded()
+
+  colprop.setdefault(colid, {}).setdefault(propid)
+  if proptype:
+    colprop[colid][propid] = proptype
+
+  _savecolprop()
+
+###############################################################################
+
+def remcolprop(colid, propid=None):
+
+  if not colid:
+    return
+  
+  _loadifnotloaded()
+
+  if colid not in colprop:
+    return
+
+  if not propid:
+    del colprop[colid]
+    _savecolprop()
+    return
+
+  if propid not in colprop[colid]:
+    return
+
+  del colprop[colid][propid]
+
+  if not colprop[colid]:
+    del colprop[colid]
+
+  _savecolprop()
+
+###############################################################################
+
+def inputcolprop(colid, propids=None):
+
+  if not colid:
+    return
+
+  _loadifnotloaded()
+
+  if colid not in colprop:
+    return
+
+  if colid not in col: # this means no node in collection
+    return
+
+  if not propids:
+    propids = list(colprop[colid])
+
+  elif isinstance(propids, str):
+    propids = [propids]
+
+  propids = [propid for propid in propids if propid in colprop[colid]]
+
+  proptypes = { propid : eval(colprop[colid][propid]) if colprop[colid][propid] else (lambda x: x) for propid in propids }
+
+  nodeids = list(col[colid])
+
+  try:
+
+    for nodeid in nodeids:
+      for propid in propids:
+        if nodeid in nodeprop and propid in nodeprop[nodeid]:
+          continue
+
+        ans = input(f"{nodeid}.{propid}: ").strip()
+
+        if not ans: # skip this node
+          continue
+
+        setnodeprop(nodeid, propid, proptypes[propid](ans))
+  
+  except KeyboardInterrupt:
+    print('')
 
 ###############################################################################
