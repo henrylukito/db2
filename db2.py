@@ -347,6 +347,35 @@ def setnodecol(nodeid, colid):
 
 ###############################################################################
 
+def setnodescol(nodeids, colid):
+
+  if not nodeids or not colid:
+    return
+
+  nodeids = [nodeid for nodeid in nodeids if nodeid]
+
+  if not nodeids:
+    return
+
+  _loadifnotloaded()
+
+  nodeemptyhaschange = False
+
+  for nodeid in nodeids:
+    node.setdefault(nodeid)
+    col.setdefault(colid, {}).setdefault(nodeid)
+    nodecol.setdefault(nodeid, {}).setdefault(colid)
+    if nodeid in nodeempty:
+      del nodeempty[nodeid]
+      nodeemptyhaschange = True
+
+  if nodeemptyhaschange:
+    _savenodeempty()
+
+  _savecol(colid)
+
+###############################################################################
+
 def remnodecol(nodeid, colid):
 
 # remove node from collection if they exist
