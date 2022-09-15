@@ -981,3 +981,37 @@ def inputcolprop(colid, propids=None):
     print('')
 
 ###############################################################################
+
+def inputnodesprop(nodeids, propid, proptype=None):
+
+  nodeids = list(nodeids)
+
+  def convert(value):
+    try:
+      return int(value)
+    except ValueError:
+      pass
+    try:
+      return float(value)
+    except ValueError:
+        pass
+    try:
+      return str(value)
+    except ValueError:
+      return value
+
+  proptype = eval(proptype) if proptype else convert
+
+  try:
+    for nodeid in nodeids:
+      
+      ans = input(f"{nodeid}.{propid}: ").strip()
+      if not ans:
+        continue
+
+      setnodeprop(nodeid, propid, proptype(ans))
+
+  except KeyboardInterrupt:
+    print('')
+
+###############################################################################
