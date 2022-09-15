@@ -119,12 +119,15 @@ def _loadifnotloaded():
 ###############################################################################
 
 def _savenodeempty():
+
   with (dbpath/'emptynodes.yml').open('w', encoding='utf-8') as fp:
     yaml.safe_dump(list(nodeempty), fp, default_flow_style=False)
 
 ###############################################################################
 
 def _savecol(colid):
+
+  (dbpath / 'collections').mkdir(parents=True, exist_ok=True)
 
   with (dbpath / 'collections' / (colid + '.yml')).open('w', encoding='utf-8') as fp:
     yaml.safe_dump(list(col[colid]), fp, default_flow_style=False)
@@ -139,6 +142,8 @@ def _delcol(colid):
 
 def _saveprop(propid):
 
+  (dbpath / 'properties').mkdir(parents=True, exist_ok=True)
+
   with (dbpath / 'properties' / (propid + '.yml')).open('w', encoding='utf-8') as fp:
     yaml.safe_dump(prop[propid], fp, default_flow_style=False)
 
@@ -151,6 +156,8 @@ def _delprop(propid):
 ###############################################################################
 
 def _saverel(relid):
+
+  (dbpath / 'relationships').mkdir(parents=True, exist_ok=True)
 
   with (dbpath / 'relationships' / (relid + '.yml')).open('w', encoding='utf-8') as fp:
     yaml.safe_dump(rel[relid], fp, default_flow_style=False)
