@@ -622,7 +622,7 @@ def fillcolprop(colid, propid=None):
 
   for propid in propids:
 
-    proptype = eval(colprop[colid][propid]) if colprop[colid][propid] else (lambda x: eval(x))
+    proptype = eval(colprop[colid][propid]) if colprop[colid][propid] else (lambda x: x)
 
     try:
 
