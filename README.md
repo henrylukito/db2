@@ -238,4 +238,6 @@ Display all monster that do not have health property yet:
 
 Collection is more binary than a boolean property; a node is either in collection or not. In contrast, with boolean property there exists 3 possibilites with a node: Either the node has the property and its value is either true or false, or the node doesn't have the property.
 
-With relationship it's easier to look at the other side. For example, monsters drops items. If we want to know all the monsters that drop a specific item, it's easier to do with `backrel` which has been precomputed.
+With relationship it's easier to look at the other side. For example, monsters drops items. If we want to know all the monsters that drop a specific item, it's easier to do with `backrel` which has been precomputed. But it's also not that hard to compute on demand with property.
+
+Relationship can also have properties (property dict).
