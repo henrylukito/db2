@@ -1,46 +1,39 @@
 # db2
 
-Python module to help manage a folder of YAML files as a (graph) database. The data from YAML files can be loaded in Python program as dict objects, and editing these dict objects with provided editing functions will save the changes to YAML files.
+Python module to manage a folder of YAML files as a (graph) database. Load data from YAML files into dicts, and save changes to dicts back to YAML files.
 
 
-## How to create new database
+## How to load database
 
-Call `load('path-to-db-folder')`. A folder named `path-to-db-folder` will be created according to the path name if it doesn't yet exist, together with some starting subfolders and files. The database will also be loaded (see below).
-
-
-## How to load dict objects from YAML files
-
-Call `load('path-to-db-folder')`. This module's dictionary objects such as `node`, `col`, `prop`, `rel` etc will be populated according to data from the files.
+Call `load('path-to-db-folder')`. If path doesn't exist, it will be created along with starting subdirectories and files. db2 dicts such as `node`, `col`, `prop` will be populated with data from YAML files.
 
 
-## How to save dict objects to YAML files
+## How to save database
 
-After you load the database, calls to editing functions such as `setnode`, `remcol`, `renameprop` etc will save the changes back to YAML files.
+Calls to db2 functions such as `setnode`, `remcol`, `renameprop` will save changes back to YAML files.
 
 
 ## What is col?
 
-It stands for collection. A collection is just a way to have a subset list of nodes. Same node can exist in multiple collections.
+It stands for collection. A collection is a subset list of nodes. The same node can exist in multiple collections. Might be known as label, tag, group or set in other systems.
 
 
-## I see something like `col` and `nodecol` dicts. What is the difference?
+## What is the difference between `col` and `nodecol` dicts?
 
 The keys for `col` dict are col ids, while the keys for `nodecol` are node ids.
 
-You use `col` dict to find out all nodes in a collection while `nodecol` dict is to find out all collections a node is in.
+So `col` dict can be used to find all nodes in a collection while `nodecol` dict is to find all collections a node is in.
 
-This pattern applies to other pairs of dicts like `prop` and `nodeprop`, `rel` and `noderel` etc.
+Similar pattern applies to other pairs of dicts like `prop` and `nodeprop`, `rel` and `noderel` etc.
 
 
 ## What is the difference between `rel`, `backrel`, `noderel`, `nodebackrel`, `nodetarget`, `nodesource`?
 
-For a particular relationship instance between a source node and a target node, there is a property dict for that relationship instance.
+For a particular instance of relationship between a source node and a target node, there is a property dict for it.
 
-The same relationship property dict can be accessed via 6 different dicts.
+This dict can be accessed by `rel[relid][sourceid][targetid]`
 
-How the 6 dicts differ is the keys required to get to access property dict:
-
-rel : `rel[relid][sourceid][targetid]`
+But it can also be accessed by:
 
 backrel: `backrel[relid][targetid][sourceid]`
 
@@ -52,15 +45,14 @@ nodetarget: `nodetarget[sourceid][targetid][relid]`
 
 nodesource: `nodesource[targetid][sourceid][relid]`
 
-Only `rel` is saved to YAML file. The rest are derived from `rel`.
+Only `rel` is saved to YAML file. The rest are computed from `rel`.
 
 `rel[relid]` and `backrel[relid]` can be used to list all the sources and targets of a relationship respectively.
 
-To list all relationships a node has, `noderel[sourceid]`
+`noderel[sourceid]` and `nodebackrel[targetid]` can be used to list node's all outgoing and incoming relationships respectively.
 
-To list all relationships a node is 'backlinked to'/'a target of', `nodebackrel[targetid]`
+`nodesource[targetid]` and `nodetarget[sourceid]` can be used to list all nodes linked to a node (regardless of specific relationships), and for each link finds out which relationships link them.
 
-If you want to know all the nodes a node links to (without caring which relationship), `nodetarget[sourceid]`. Then `nodetarget[sourceid][targetid]` lists all the relationships which link the 2 nodes (they might be linked by more than 1 relationship).
 
 ## How to edit nodes/collections/properties/relationships?
 
@@ -74,28 +66,28 @@ These functions will update the files immediately and keep the dict objects cons
 
 The `set` functions will generally add elements (e.g., node, col, prop) if they don't already exist, instead of throwing errors.
 
-The `rem` functions will generally remove elements that have become empty (i.e., not associated to any node) (e.g., col, prop, and rel) and will also delete their YAML files.
+The `rem` functions will generally remove collections, properties or relationships that have become empty (i.e., not associated to any node) and also delete their YAML files (but not empty nodes).
 
 
 ## Quick way to set nodes/properties/relationships
 
-There is a function `quickset` that, if you pass no argument, will keep looping for user input until it's keyboard interrupted (ctrl+c).
+There is a function `inputnode` that, if you pass no argument, will keep looping for user input until it's keyboard interrupted (ctrl+c).
 
-The function will do something based on each user input statement.
+The function will do something based on each input statement.
 
-The statement should follow certain syntax:
+The statement has a certain syntax:
 
 Add a node:
 
 `slime`
 
-If node already exists, nothing will happen (no error is thrown).
+If node already exists, nothing is done (no error is thrown, and node not reset to empty node).
 
 Add a node and put into a collection:
 
 `slime:monster`
 
-If the collection doesn't yet exist, it will be created.
+If the collection doesn't exist, it will be created.
 
 You can put node in multiple collections at once like this:
 
@@ -105,7 +97,7 @@ Add property to node:
 
 `slime.health=100`
 
-Again if the property doesn't yet exist, it will be created.
+Again if the property doesn't exist, it will be created.
 
 Add multiple properties:
 
@@ -125,7 +117,7 @@ You can add property to the relationship:
 
 `slime>drops.probability=0.5>potion`
 
-Nodes that do not yet exist, including relationship targets, will be created.
+Nodes that do not exist, including the nodes in relationship target, will be created.
 
 You can add multiple relationship targets like this:
 
@@ -149,7 +141,7 @@ Even though complex statements are technically possible, e.g.:
 
 `slime:monster.health=100,elem='water'>drops>potion:item:healingitem.sellprice=50;jelly:item:material:food.sellprice=100,stomach=0.1`
 
-`quickset` is meant for iterating quickly with shorter statements like this:
+`inputnode` is meant for iterating quickly with shorter statements like this:
 
 `slime:monster`
 
@@ -174,16 +166,14 @@ You can specify what properties a node under a certain collection should have wi
 
 There's a special function called `fillcolprop`, which when called will search for nodes in that collection that do not yet have that property, and prompt user for the property value, which will then be saved.
 
-The equivalent for relationship is `relprop`. `fillrelprop` will search all relationship instances (i.e., between different source node and target node) that do not yet have the property, and prompt user for the property value.
-
-Loading and saving is not strict, e.g., it doesn't throw errors if a node in a collection doesn't have a property specified in `colprop`. So `colprop` and is more of a way to set up batch input (with `fillcolprop`) than constraints.
+The equivalent for relationship is `relprop`.
 
 
-## How to use these objects once they're loaded?
+## How to use/analyze these objects once they're loaded?
 
 The module currently doesn't extend its scope much beyond editing and ensuring the dict objects and data files are in sync.
 
-To start with, you can use various Python features to query the dict objects like a database (e.g., list comprehension). You might want to define helper/convenience functions to ease the syntax.
+To start with, you can use various Python features to query the dict objects like a database (e.g., list comprehension). You might want to define your own helper/convenience functions to ease the syntax.
 
 ### Examples:
 
@@ -242,6 +232,7 @@ Display all monster health if they have health property:
 Display all monster that do not have health property yet:
 
 `[nodeid for nodeid in col['monster'] if 'health' not in nodeprop.get(nodeid, {})]`
+
 
 ## How to decide whether to use collection, property or relationship?
 
