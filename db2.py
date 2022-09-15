@@ -984,7 +984,13 @@ def inputcolprop(colid, propids=None):
 
 def inputnodesprop(nodeids, propid, proptype=None):
 
-  nodeids = list(nodeids)
+  if not nodeids or not propid:
+    return
+
+  nodeids = [nodeid for nodeid in nodeids if nodeid]
+
+  if not nodeids:
+    return
 
   def convert(value):
     try:
